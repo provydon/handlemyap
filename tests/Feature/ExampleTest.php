@@ -15,17 +15,20 @@ class ExampleTest extends TestCase
         $this->get('/')->assertOk()->assertSee('pays them');
     }
 
-    public function test_demo_login_signs_in(): void
+    public function test_user_can_register_and_is_signed_in(): void
     {
-        User::factory()->create(['email' => 'demo@handlemyap.test']);
+        $this->post('/register', [
+            'name' => 'Al', 'email' => 'al@example.test',
+            'password' => 'password123', 'password_confirmation' => 'password123',
+        ])->assertRedirect('/app');
 
-        $this->post('/demo-login')->assertRedirect('/app');
         $this->assertAuthenticated();
+        $this->assertDatabaseHas('users', ['email' => 'al@example.test']);
     }
 
     public function test_login_page_renders(): void
     {
-        $this->get('/login')->assertOk()->assertSee('handle');
+        $this->get('/login')->assertOk()->assertSee('Sign in');
     }
 
     public function test_dashboard_requires_auth(): void

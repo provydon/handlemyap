@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>handlemyap — @yield('title', 'Dashboard')</title>
+    <title>HandlemyAP — @yield('title', 'Dashboard')</title>
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 </head>
 <body class="h-full text-slate-800">
@@ -13,7 +13,7 @@
     <nav class="bg-white border-b border-slate-200">
         <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <span class="font-semibold text-slate-900">handle<span class="text-indigo-600">my</span>ap</span>
+                <span class="font-semibold text-slate-900">Handlemy<span class="text-indigo-600">AP</span></span>
                 <span class="text-xs text-slate-400 hidden sm:inline">AI accounts payable → PayPal</span>
             </div>
             <div class="flex items-center gap-4 text-sm">

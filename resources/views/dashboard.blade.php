@@ -5,7 +5,7 @@
 <div class="flex items-center justify-between mb-5">
     <div>
         <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
-        <p class="text-sm text-slate-500">Drop an invoice in — handlemyap reads it, applies your rules, and pays via PayPal.</p>
+        <p class="text-sm text-slate-500">Drop an invoice in — HandlemyAP reads it, applies your rules, and pays via PayPal.</p>
     </div>
 </div>
 

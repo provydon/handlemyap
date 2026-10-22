@@ -29,14 +29,20 @@ class AuthController extends Controller
         return redirect()->intended('/app');
     }
 
-    /** One-click sign-in to the seeded demo account (for the landing page). */
-    public function demoLogin(Request $request)
+    public function showRegister()
     {
-        $user = \App\Models\User::where('email', 'demo@handlemyap.test')->first();
+        return view('auth.register');
+    }
 
-        if (! $user) {
-            return redirect('/login');
-        }
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = \App\Models\User::create($data);
 
         Auth::login($user);
         $request->session()->regenerate();

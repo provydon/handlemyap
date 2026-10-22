@@ -10,7 +10,8 @@ Route::get('/', fn () => view('welcome'))->name('home');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/demo-login', [AuthController::class, 'demoLogin']);
+    Route::get('/register', [AuthController::class, 'showRegister']);
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');

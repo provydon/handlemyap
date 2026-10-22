@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>handlemyap — AI accounts payable, paid via PayPal</title>
-    <meta name="description" content="handlemyap reads any invoice with AI, applies your rules, and pays the vendor via PayPal — with a human in the loop for anything that needs a second look.">
+    <title>HandlemyAP — AI accounts payable, paid via PayPal</title>
+    <meta name="description" content="HandlemyAP reads any invoice with AI, applies your rules, and pays the vendor via PayPal — with a human in the loop for anything that needs a second look.">
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 </head>
 <body class="bg-white text-slate-800 antialiased">
@@ -13,7 +13,7 @@
 {{-- Nav --}}
 <header class="border-b border-slate-100">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <div class="font-semibold text-lg">handle<span class="text-indigo-600">my</span>ap</div>
+        <div class="font-semibold text-lg">Handlemy<span class="text-indigo-600">AP</span></div>
         <nav class="flex items-center gap-5 text-sm">
             <a href="#how" class="text-slate-600 hover:text-slate-900 hidden sm:inline">How it works</a>
             <a href="#embed" class="text-slate-600 hover:text-slate-900 hidden sm:inline">For platforms</a>
@@ -22,6 +22,7 @@
                 <a href="/app" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Dashboard</a>
             @else
                 <a href="/login" class="text-slate-600 hover:text-slate-900">Sign in</a>
+                <a href="/register" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Get started</a>
             @endauth
         </nav>
     </div>
@@ -38,22 +39,18 @@
             AI reads your invoices <span class="text-indigo-600">and pays them.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
-            Drop in an invoice — any format. handlemyap extracts it with AI, applies your rules,
+            Drop in an invoice — any format. HandlemyAP extracts it with AI, applies your rules,
             and pays the vendor via <strong>PayPal</strong>. A human taps approve on anything that needs a second look.
         </p>
         <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <form method="POST" action="/demo-login">
-                @csrf
-                <button class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-3 font-medium shadow-sm">
-                    Try the live demo →
-                </button>
-            </form>
+            <a href="/register" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-3 font-medium shadow-sm">
+                Get started free →
+            </a>
             <a href="https://github.com/provydon/handlemyap"
                class="inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium border border-slate-300 text-slate-700 hover:bg-slate-50">
                 View the code
             </a>
         </div>
-        <p class="mt-3 text-xs text-slate-400">No sign-up — one click opens a demo account.</p>
     </div>
 </section>
 
@@ -87,7 +84,7 @@
                 ['Human in the loop', 'Approve, hold or reject from one clean queue — with the exact reason an invoice needs your eyes.'],
                 ['Catches duplicates', 'Deterministic duplicate detection stops the classic AP mistake: paying the same bill twice.'],
                 ['Pays anyone', 'PayPal Payouts reach vendors by email — they don’t need an existing PayPal setup to get paid.'],
-                ['API & MCP first', 'Every action is an API call and an MCP tool, so other apps embed handlemyap as their payout engine.'],
+                ['API & MCP first', 'Every action is an API call and an MCP tool, so other apps embed HandlemyAP as their payout engine.'],
             ] as [$t, $d])
             <div class="bg-white rounded-xl border border-slate-200 p-5">
                 <div class="font-semibold text-slate-900">{{ $t }}</div>
@@ -105,7 +102,7 @@
             <h2 class="text-2xl font-bold text-slate-900">Embed it in your app</h2>
             <p class="mt-3 text-slate-600">
                 Building a marketplace or platform that pays contractors? Don’t rebuild AP.
-                Submit a payable to handlemyap and it handles extraction, rules, approval and the PayPal payout —
+                Submit a payable to HandlemyAP and it handles extraction, rules, approval and the PayPal payout —
                 then calls you back. A notary-signing platform paying notaries, for example, plugs in as a payout rail.
             </p>
             <ul class="mt-4 space-y-2 text-sm text-slate-600">
@@ -129,18 +126,15 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 {{-- CTA --}}
 <section class="bg-indigo-600">
     <div class="max-w-6xl mx-auto px-5 py-14 text-center">
-        <h2 class="text-2xl font-bold text-white">See it pay an invoice</h2>
-        <p class="text-indigo-100 mt-2">Open the demo — add an invoice and watch it flow to a PayPal payout.</p>
-        <form method="POST" action="/demo-login" class="mt-6">
-            @csrf
-            <button class="bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Try the live demo →</button>
-        </form>
+        <h2 class="text-2xl font-bold text-white">Put your payables on autopilot</h2>
+        <p class="text-indigo-100 mt-2">Create an account, add an invoice, and let HandlemyAP pay it via PayPal.</p>
+        <a href="/register" class="inline-block mt-6 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Get started free →</a>
     </div>
 </section>
 
 <footer class="border-t border-slate-100">
-    <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:row items-center justify-between text-sm text-slate-400 gap-2">
-        <div>handle<span class="text-indigo-600">my</span>ap — AI accounts payable → PayPal</div>
+    <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-400 gap-2">
+        <div>Handlemy<span class="text-indigo-600">AP</span> — AI accounts payable → PayPal</div>
         <div class="flex gap-4">
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>
             <a href="/login" class="hover:text-slate-600">Sign in</a>

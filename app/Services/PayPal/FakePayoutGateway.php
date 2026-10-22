@@ -20,4 +20,9 @@ class FakePayoutGateway implements PayoutGateway
             rawStatus: 'SUCCESS',
         );
     }
+
+    public function status(string $batchId): ?string
+    {
+        return 'SUCCESS';
+    }
 }

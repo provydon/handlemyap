@@ -4,7 +4,7 @@
 <div class="min-h-[70vh] flex items-center justify-center">
     <div class="w-full max-w-sm">
         <div class="text-center mb-6">
-            <div class="text-2xl font-semibold text-slate-900">handle<span class="text-indigo-600">my</span>ap</div>
+            <div class="text-2xl font-semibold text-slate-900">Handlemy<span class="text-indigo-600">AP</span></div>
             <p class="text-sm text-slate-500 mt-1">AI reads your invoices and pays them via PayPal.</p>
         </div>
         <form method="POST" action="/login" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
@@ -21,7 +21,7 @@
                        class="w-full rounded-lg border-slate-300 border px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 py-2 font-medium">Sign in</button>
-            <p class="text-xs text-slate-400 text-center">Demo: demo@handlemyap.test / password</p>
+            <p class="text-xs text-slate-500 text-center">No account? <a href="/register" class="text-indigo-600 hover:underline">Create one</a></p>
         </form>
     </div>
 </div>

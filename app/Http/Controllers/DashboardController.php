@@ -14,8 +14,12 @@ class DashboardController extends Controller
     }
 
     /** JSON feed for the AG Grid queue + the headline stats. */
-    public function data(Request $request)
+    public function data(Request $request, \App\Services\Payables\PayoutReconciler $reconciler)
     {
+        // Best-effort: advance any in-flight PayPal payouts before rendering, so
+        // the queue reflects real settlement without needing a background worker.
+        rescue(fn () => $reconciler->reconcile($request->user()), report: false);
+
         $invoices = $request->user()->invoices()
             ->with('vendor')->latest()->limit(300)->get()
             ->map(fn (Invoice $i) => [

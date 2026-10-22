@@ -73,6 +73,23 @@ class PayPalPayoutGateway implements PayoutGateway
         );
     }
 
+    public function status(string $batchId): ?string
+    {
+        $token = $this->accessToken();
+        if ($token === null) {
+            return null;
+        }
+
+        $response = Http::withToken($token)->acceptJson()
+            ->get($this->base.'/v1/payments/payouts/'.$batchId);
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        return strtoupper((string) $response->json('batch_header.batch_status'));
+    }
+
     private function accessToken(): ?string
     {
         $response = Http::asForm()
