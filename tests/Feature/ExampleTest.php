@@ -10,6 +10,19 @@ class ExampleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_landing_page_renders(): void
+    {
+        $this->get('/')->assertOk()->assertSee('pays them');
+    }
+
+    public function test_demo_login_signs_in(): void
+    {
+        User::factory()->create(['email' => 'demo@handlemyap.test']);
+
+        $this->post('/demo-login')->assertRedirect('/app');
+        $this->assertAuthenticated();
+    }
+
     public function test_login_page_renders(): void
     {
         $this->get('/login')->assertOk()->assertSee('handle');
