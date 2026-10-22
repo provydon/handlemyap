@@ -53,7 +53,7 @@
                 View the code
             </a>
         </div>
-        <p class="mt-3 text-xs text-slate-400">No sign-up — one click opens a seeded demo account.</p>
+        <p class="mt-3 text-xs text-slate-400">No sign-up — one click opens a demo account.</p>
     </div>
 </section>
 
@@ -130,7 +130,7 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 <section class="bg-indigo-600">
     <div class="max-w-6xl mx-auto px-5 py-14 text-center">
         <h2 class="text-2xl font-bold text-white">See it pay an invoice</h2>
-        <p class="text-indigo-100 mt-2">Open the seeded demo — add an invoice and watch it flow to a PayPal payout.</p>
+        <p class="text-indigo-100 mt-2">Open the demo — add an invoice and watch it flow to a PayPal payout.</p>
         <form method="POST" action="/demo-login" class="mt-6">
             @csrf
             <button class="bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Try the live demo →</button>
