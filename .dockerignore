@@ -1,0 +1,6 @@
+/vendor
+/node_modules
+/.git
+/.env
+/database/database.sqlite
+/storage/logs/*.log
