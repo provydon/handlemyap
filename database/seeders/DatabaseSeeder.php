@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
         // empty, so what you see in the demo is what you add.
         $user = User::updateOrCreate(
             ['email' => 'demo@handlemyap.test'],
-            ['name' => 'Demo', 'password' => Hash::make('password')],
+            ['name' => 'Demo', 'password' => Hash::make('password'), 'handle' => 'demo'],
         );
 
         AutoApprovalRule::updateOrCreate(

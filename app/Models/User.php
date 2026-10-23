@@ -18,7 +18,21 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'handle',
     ];
+
+    /** A unique public intake handle derived from $base (name or email). */
+    public static function makeHandle(string $base): string
+    {
+        $slug = \Illuminate\Support\Str::slug($base) ?: 'user';
+        $handle = $slug;
+        $i = 1;
+        while (static::where('handle', $handle)->exists()) {
+            $handle = $slug.($i++);
+        }
+
+        return $handle;
+    }
 
     protected $hidden = [
         'password',

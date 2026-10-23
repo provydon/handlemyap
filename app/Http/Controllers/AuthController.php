@@ -43,6 +43,7 @@ class AuthController extends Controller
         ]);
 
         $user = \App\Models\User::create($data);
+        $user->forceFill(['handle' => \App\Models\User::makeHandle($user->name)])->save();
 
         Auth::login($user);
         $request->session()->regenerate();

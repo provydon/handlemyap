@@ -3,9 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class SettingsController extends Controller
 {
+    public function updateHandle(Request $request)
+    {
+        $data = $request->validate([
+            'handle' => [
+                'required', 'string', 'max:40', 'regex:/^[a-z0-9][a-z0-9-]*$/',
+                Rule::unique('users', 'handle')->ignore($request->user()->id),
+            ],
+        ]);
+
+        $request->user()->update(['handle' => $data['handle']]);
+
+        return back()->with('status', 'Your intake link was updated.');
+    }
+
     public function index(Request $request)
     {
         return view('settings', [

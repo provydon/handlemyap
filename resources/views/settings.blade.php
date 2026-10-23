@@ -4,6 +4,25 @@
 
 <h1 class="text-xl font-semibold text-slate-900 mb-5">Settings</h1>
 
+{{-- Intake link --}}
+<div class="bg-white rounded-xl border border-slate-200 p-5 mb-6">
+    <div class="font-medium text-slate-800 mb-1">Your invoice intake link</div>
+    <p class="text-xs text-slate-500 mb-3">Share this and vendors send invoices straight into your queue — no more chasing your email or WhatsApp.</p>
+    <div class="flex items-center gap-2 mb-4">
+        <input readonly value="{{ url('/u/'.auth()->user()->handle) }}"
+               class="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+        <a href="{{ url('/u/'.auth()->user()->handle) }}" target="_blank"
+           class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">Open</a>
+    </div>
+    <form method="POST" action="/settings/handle" class="flex items-center gap-2">
+        @csrf
+        <span class="text-sm text-slate-400">{{ url('/u') }}/</span>
+        <input name="handle" value="{{ auth()->user()->handle }}"
+               class="w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <button class="bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">Save link</button>
+    </form>
+</div>
+
 <div class="grid md:grid-cols-2 gap-6">
     {{-- Auto-approval rules --}}
     <form method="POST" action="/settings/rules" class="bg-white rounded-xl border border-slate-200 p-5">
