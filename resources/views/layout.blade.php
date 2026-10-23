@@ -39,5 +39,12 @@
         @yield('content')
     </main>
 </div>
+<script>
+    function togglePw(btn) {
+        const input = btn.parentElement.querySelector('input');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.querySelectorAll('svg').forEach(s => s.classList.toggle('hidden'));
+    }
+</script>
 </body>
 </html>
