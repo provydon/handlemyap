@@ -78,11 +78,20 @@
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/dist/ag-grid-community.min.js"></script>
 <script>
 function copyIntake(btn) {
-    const url = document.getElementById('intake-url').value;
-    navigator.clipboard?.writeText(url);
+    const input = document.getElementById('intake-url');
     const prev = btn.textContent;
-    btn.textContent = 'Copied ✓';
-    setTimeout(() => { btn.textContent = prev; }, 1500);
+    const ok = () => { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = prev; }, 1500); };
+    const fallback = () => {
+        // Works over plain http (where navigator.clipboard is unavailable).
+        input.focus(); input.select(); input.setSelectionRange(0, 99999);
+        try { document.execCommand('copy') ? ok() : (btn.textContent = 'Press ⌘C'); }
+        catch (e) { btn.textContent = 'Press ⌘C'; }
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(ok).catch(fallback);
+    } else {
+        fallback();
+    }
 }
 
 const CSRF = document.querySelector('meta[name=csrf-token]').content;
