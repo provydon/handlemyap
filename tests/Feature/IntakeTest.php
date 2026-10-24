@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class IntakeTest extends TestCase
@@ -39,6 +41,26 @@ class IntakeTest extends TestCase
             'vendor_name' => 'Bob the Contractor',
             'source' => 'intake',
             'status' => Invoice::STATUS_NEEDS_REVIEW, // unknown vendor, no rule → safe
+        ]);
+    }
+
+    public function test_vendor_can_upload_an_invoice_file(): void
+    {
+        Storage::fake('local');
+        $owner = User::factory()->create(['handle' => 'acme']);
+
+        $file = UploadedFile::fake()->createWithContent(
+            'invoice.txt',
+            "Vendor: Bob Co\nEmail: bob@bob.test\nAmount: 75.00 USD\n",
+        );
+
+        $this->post('/u/acme', ['file' => $file])
+            ->assertRedirect()->assertSessionHas('sent');
+
+        $this->assertDatabaseHas('invoices', [
+            'user_id' => $owner->id,
+            'source' => 'intake',
+            'vendor_name' => 'Bob Co',
         ]);
     }
 

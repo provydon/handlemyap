@@ -25,6 +25,16 @@ class IntakeController extends Controller
     {
         $owner = User::where('handle', $handle)->firstOrFail();
 
+        // Upload-first: a vendor normally just drops their invoice file and the
+        // AI reads it. Manual fields are the fallback when they'd rather type it.
+        if ($request->hasFile('file')) {
+            $request->validate(['file' => 'required|file|max:10240']);
+
+            $orchestrator->ingestUpload($owner, $request->file('file'), ['source' => 'intake']);
+
+            return back()->with('sent', $owner->name);
+        }
+
         $data = $request->validate([
             'vendor_name' => 'required|string|max:255',
             'vendor_email' => 'required|email|max:255',   // so the owner can actually pay them
@@ -32,10 +42,9 @@ class IntakeController extends Controller
             'amount' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
             'due_date' => 'nullable|date',
-            'file' => 'nullable|file|max:10240',
         ]);
 
-        $invoice = $orchestrator->ingestData($owner, [
+        $orchestrator->ingestData($owner, [
             'vendor_name' => $data['vendor_name'],
             'vendor_email' => $data['vendor_email'],
             'invoice_number' => $data['invoice_number'] ?? null,
@@ -44,14 +53,6 @@ class IntakeController extends Controller
             'due_date' => $data['due_date'] ?? null,
             'source' => 'intake',
         ]);
-
-        // Keep the uploaded document attached for reference.
-        if ($request->hasFile('file')) {
-            $invoice->update([
-                'file_path' => $request->file('file')->store('invoices'),
-                'original_filename' => $request->file('file')->getClientOriginalName(),
-            ]);
-        }
 
         return back()->with('sent', $owner->name);
     }
