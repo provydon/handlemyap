@@ -12,7 +12,7 @@ class ExampleTest extends TestCase
 
     public function test_landing_page_renders(): void
     {
-        $this->get('/')->assertOk()->assertSee('pays them');
+        $this->get('/')->assertOk()->assertSee('Your vendors send the invoices');
     }
 
     public function test_user_can_register_and_is_signed_in(): void

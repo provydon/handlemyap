@@ -2,10 +2,25 @@
 @section('title', 'Dashboard')
 @section('content')
 
-<div class="flex items-center justify-between mb-5">
-    <div>
-        <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
-        <p class="text-sm text-slate-500">Drop an invoice in — HandlemyAP reads it, applies your rules, and pays via PayPal.</p>
+<div class="mb-5">
+    <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
+    <p class="text-sm text-slate-500">Vendors send invoices to your link — HandlemyAP reads each one, pays via PayPal under your rules, and flags anything off for you to review.</p>
+</div>
+
+{{-- Intake link — the main way invoices arrive --}}
+@php($intake = url('/u/'.auth()->user()->handle))
+<div class="bg-indigo-600 rounded-xl p-5 mb-5 text-white">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+            <div class="font-medium">Your invoice intake link</div>
+            <p class="text-sm text-indigo-100 mt-0.5">Share it with your vendors — their invoices land straight in the queue below. No more digging through email or WhatsApp.</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <input id="intake-url" readonly value="{{ $intake }}"
+                   class="rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white w-56 max-w-full">
+            <button onclick="copyIntake(this)" class="rounded-lg bg-white text-indigo-700 px-3 py-2 text-sm font-medium hover:bg-indigo-50">Copy</button>
+            <a href="{{ $intake }}" target="_blank" class="rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10">Open</a>
+        </div>
     </div>
 </div>
 
@@ -19,44 +34,57 @@
     @endforeach
 </div>
 
-{{-- Add invoice --}}
-<div class="grid md:grid-cols-2 gap-4 mb-6">
-    <form method="POST" action="/app/invoices" enctype="multipart/form-data"
-          class="bg-white rounded-xl border border-slate-200 p-4">
-        @csrf
-        <div class="font-medium text-slate-800 mb-2">Upload an invoice</div>
-        <p class="text-xs text-slate-500 mb-3">PDF, image, or .txt/.json — any layout. The AI reads it.</p>
-        <input type="file" name="file" required
-               class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700">
-        <button class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-medium">Read & queue</button>
-    </form>
+{{-- Add one yourself — secondary, for the odd invoice that didn't come through your link --}}
+<details class="mb-6">
+    <summary class="cursor-pointer select-none text-sm text-slate-500 hover:text-slate-700 py-1">
+        + Add one yourself (got an invoice another way? upload or type it in)
+    </summary>
+    <div class="grid md:grid-cols-2 gap-4 mt-3">
+        <form method="POST" action="/app/invoices" enctype="multipart/form-data"
+              class="bg-white rounded-xl border border-slate-200 p-4">
+            @csrf
+            <div class="font-medium text-slate-800 mb-2">Upload an invoice</div>
+            <p class="text-xs text-slate-500 mb-3">PDF, image, or .txt/.json — any layout. The AI reads it.</p>
+            <input type="file" name="file" required
+                   class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700">
+            <button class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-medium">Read & queue</button>
+        </form>
 
-    <form method="POST" action="/app/invoices" class="bg-white rounded-xl border border-slate-200 p-4">
-        @csrf
-        <div class="font-medium text-slate-800 mb-2">Quick add</div>
-        <div class="grid grid-cols-2 gap-2">
-            <input name="vendor_name" placeholder="Vendor" required class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <input name="vendor_email" type="email" placeholder="Payout email" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <input name="amount" type="number" step="0.01" placeholder="Amount" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            <input name="currency" value="USD" maxlength="3" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
-            <input name="due_date" type="date" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-        </div>
-        <button class="mt-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">Add</button>
-    </form>
-</div>
+        <form method="POST" action="/app/invoices" class="bg-white rounded-xl border border-slate-200 p-4">
+            @csrf
+            <div class="font-medium text-slate-800 mb-2">Quick add</div>
+            <div class="grid grid-cols-2 gap-2">
+                <input name="vendor_name" placeholder="Vendor" required class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input name="vendor_email" type="email" placeholder="Payout email" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input name="amount" type="number" step="0.01" placeholder="Amount" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input name="currency" value="USD" maxlength="3" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
+                <input name="due_date" type="date" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            </div>
+            <button class="mt-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">Add</button>
+        </form>
+    </div>
+</details>
 
 {{-- Queue --}}
 <div class="bg-white rounded-xl border border-slate-200 p-4">
     <div class="font-medium text-slate-800 mb-3">Invoice queue</div>
     <div id="grid" class="ag-theme-quartz" style="height: 460px; width: 100%;"></div>
     <div id="fallback" class="hidden overflow-x-auto"></div>
-    <div id="empty" class="hidden text-center text-slate-400 py-10 text-sm">No invoices yet — add one above.</div>
+    <div id="empty" class="hidden text-center text-slate-400 py-10 text-sm">No invoices yet — share your intake link above and they’ll show up here.</div>
 </div>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-theme-quartz.css">
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/dist/ag-grid-community.min.js"></script>
 <script>
+function copyIntake(btn) {
+    const url = document.getElementById('intake-url').value;
+    navigator.clipboard?.writeText(url);
+    const prev = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.textContent = prev; }, 1500);
+}
+
 const CSRF = document.querySelector('meta[name=csrf-token]').content;
 const money = (a, c) => a == null ? '' : new Intl.NumberFormat('en-US', {style:'currency', currency: c || 'USD'}).format(a);
 
@@ -116,6 +144,7 @@ async function load() {
                 { headerName: 'Status', field: 'status', maxWidth: 140, cellRenderer: p => badge(p.value) },
                 { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
                 { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
+                { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-indigo-600 hover:underline">view</a>` : '' },
                 { headerName: 'Action', minWidth: 220, cellRenderer: p => actionButtons(p.data.id, p.data.status) },
             ],
         });
@@ -131,13 +160,14 @@ function renderFallback(rows) {
     el.innerHTML = `<table class="min-w-full text-sm">
         <thead><tr class="text-left text-slate-400 border-b">
             <th class="py-2 pr-3">Vendor</th><th class="pr-3">Amount</th><th class="pr-3">Due</th>
-            <th class="pr-3">Status</th><th class="pr-3">Why / note</th><th>Action</th></tr></thead>
+            <th class="pr-3">Status</th><th class="pr-3">Why / note</th><th class="pr-3">Doc</th><th>Action</th></tr></thead>
         <tbody>${rows.map(r => `<tr class="border-b border-slate-100">
             <td class="py-2 pr-3">${r.vendor ?? ''}</td>
             <td class="pr-3">${money(r.amount, r.currency)}</td>
             <td class="pr-3">${r.due_date ?? ''}</td>
             <td class="pr-3">${badge(r.status)}</td>
             <td class="pr-3 text-slate-500">${r.reasons ?? ''}</td>
+            <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-indigo-600 hover:underline">view</a>` : ''}</td>
             <td>${actionButtons(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
 }
 

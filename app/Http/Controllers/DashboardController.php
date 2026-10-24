@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Services\Payables\PayablesOrchestrator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -34,6 +35,7 @@ class DashboardController extends Controller
                 'confidence' => $i->confidence,
                 'reasons' => $i->review_reasons ? implode(' · ', $i->review_reasons) : null,
                 'source' => $i->source,
+                'file_url' => $i->file_path ? url("/app/invoices/{$i->id}/file") : null,
             ]);
 
         return response()->json([
@@ -67,6 +69,26 @@ class DashboardController extends Controller
         }
 
         return back()->with('status', 'Invoice added.');
+    }
+
+    /**
+     * Serve the stored invoice document. For a private S3 bucket we redirect to
+     * a short-lived signed URL so the browser fetches straight from S3; on the
+     * local dev disk (which can't sign) we stream it through the app.
+     */
+    public function file(Request $request, Invoice $invoice)
+    {
+        $this->authorizeOwner($request, $invoice);
+        abort_unless($invoice->file_path, 404);
+
+        $disk = Storage::disk(config('handlemyap.uploads_disk'));
+        abort_unless($disk->exists($invoice->file_path), 404);
+
+        try {
+            return redirect($disk->temporaryUrl($invoice->file_path, now()->addMinutes(5)));
+        } catch (\RuntimeException) {
+            return $disk->download($invoice->file_path, $invoice->original_filename);
+        }
     }
 
     public function approve(Request $request, Invoice $invoice, PayablesOrchestrator $orchestrator)

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>HandlemyAP — AI accounts payable, paid via PayPal</title>
-    <meta name="description" content="HandlemyAP reads any invoice with AI, applies your rules, and pays the vendor via PayPal — with a human in the loop for anything that needs a second look.">
+    <meta name="description" content="Share one link, your vendors send their invoices into your queue, and HandlemyAP reads each one with AI, pays via PayPal under your rules, and flags irregularities — duplicates, overcharges, unfamiliar vendors — for you to approve.">
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
 </head>
 <body class="bg-white text-slate-800 antialiased">
@@ -37,15 +37,20 @@
             🟦 Built for the PayPal AI Hackathon
         </span>
         <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
-            AI reads your invoices <span class="text-indigo-600">and pays them.</span>
+            Your vendors send the invoices. <span class="text-indigo-600">AI helps you pay them.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
-            Drop in an invoice — any format. HandlemyAP extracts it with AI, applies your rules,
-            and pays the vendor via <strong>PayPal</strong>. A human taps approve on anything that needs a second look.
+            Share one link. Vendors send their invoices straight into your queue — any format.
+            HandlemyAP reads each one with AI, pays via <strong>PayPal</strong> under your rules, and
+            flags anything off — duplicates, overcharges, unfamiliar vendors — for you to approve.
         </p>
+        <div class="mt-6 inline-flex items-center gap-2 text-sm">
+            <span class="text-slate-400">Your intake link</span>
+            <code class="bg-white border border-slate-200 text-indigo-700 rounded-lg px-3 py-1.5 shadow-sm">handlemyap&hellip;/u/<span class="text-slate-400">yourname</span></code>
+        </div>
         <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <a href="/register" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-3 font-medium shadow-sm">
-                Get started free →
+                Get your link →
             </a>
             <a href="https://github.com/provydon/handlemyap"
                class="inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium border border-slate-300 text-slate-700 hover:bg-slate-50">
@@ -61,8 +66,8 @@
     <p class="text-center text-slate-500 mt-2">AI only does the hard part — reading the document. Everything that touches money is deterministic.</p>
     <div class="grid md:grid-cols-4 gap-4 mt-10">
         @foreach ([
-            ['1', 'Ingest', 'Upload, email, API or MCP — any invoice, any layout.'],
-            ['2', 'AI reads it', 'Vendor, amount, due date, line items — normalised, with a confidence score.'],
+            ['1', 'Share your link', 'Vendors submit invoices to your intake link — no login. Or forward uploads, API and MCP.'],
+            ['2', 'AI reads them', 'Vendor, amount, due date, line items — normalised, with a confidence score. Any layout.'],
             ['3', 'Rules decide', 'Auto-approve within your limits, or park it in the review queue.'],
             ['4', 'PayPal pays', 'A PayPal Payout goes to the vendor by email. Scheduled for the due date.'],
         ] as [$n, $t, $d])
@@ -80,10 +85,10 @@
     <div class="max-w-6xl mx-auto px-5 py-16">
         <div class="grid md:grid-cols-3 gap-5">
             @foreach ([
+                ['Vendors come to you', 'Share one intake link. Vendors submit invoices straight into your queue — no account, no more chasing email or WhatsApp attachments.'],
                 ['Reads any invoice', 'PDFs, scans, photos, odd layouts — the AI handles heterogeneous documents a template never could.'],
+                ['Flags what looks off', 'Duplicate bills, amounts over your limit, unfamiliar vendors — parked in one clean queue with the exact reason it needs your eyes.'],
                 ['An autonomy dial', 'You set the rules: pay under $X automatically, known vendors only, cap the daily spend. Everything else waits for a tap.'],
-                ['Human in the loop', 'Approve, hold or reject from one clean queue — with the exact reason an invoice needs your eyes.'],
-                ['Catches duplicates', 'Deterministic duplicate detection stops the classic AP mistake: paying the same bill twice.'],
                 ['Pays anyone', 'PayPal Payouts reach vendors by email — they don’t need an existing PayPal setup to get paid.'],
                 ['API & MCP first', 'Every action is an API call and an MCP tool, so other apps embed HandlemyAP as their payout engine.'],
             ] as [$t, $d])
@@ -159,8 +164,8 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 <section class="bg-indigo-600">
     <div class="max-w-6xl mx-auto px-5 py-14 text-center">
         <h2 class="text-2xl font-bold text-white">Put your payables on autopilot</h2>
-        <p class="text-indigo-100 mt-2">Create an account, add an invoice, and let HandlemyAP pay it via PayPal.</p>
-        <a href="/register" class="inline-block mt-6 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Get started free →</a>
+        <p class="text-indigo-100 mt-2">Create an account, share your link, and let the invoices pay themselves via PayPal.</p>
+        <a href="/register" class="inline-block mt-6 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Get your link →</a>
     </div>
 </section>
 

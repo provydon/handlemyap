@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/app', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/data', [DashboardController::class, 'data']);
     Route::post('/app/invoices', [DashboardController::class, 'store']);
+    Route::get('/app/invoices/{invoice}/file', [DashboardController::class, 'file'])->name('invoice.file');
     Route::post('/app/invoices/{invoice}/approve', [DashboardController::class, 'approve']);
     Route::post('/app/invoices/{invoice}/hold', [DashboardController::class, 'hold']);
     Route::post('/app/invoices/{invoice}/reject', [DashboardController::class, 'reject']);

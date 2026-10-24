@@ -30,6 +30,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="HANDLEMYAP_GATEWAY" value="fake"/>
         <env name="HANDLEMYAP_EXTRACTOR" value="stub"/>
+        <env name="HANDLEMYAP_UPLOADS_DISK" value="local"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

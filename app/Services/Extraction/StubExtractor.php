@@ -35,11 +35,12 @@ class StubExtractor implements InvoiceExtractor
 
     private function read(Invoice $invoice): ?string
     {
-        if (! $invoice->file_path || ! Storage::exists($invoice->file_path)) {
+        $disk = Storage::disk(config('handlemyap.uploads_disk'));
+        if (! $invoice->file_path || ! $disk->exists($invoice->file_path)) {
             return null;
         }
 
-        return Storage::get($invoice->file_path);
+        return $disk->get($invoice->file_path);
     }
 
     /** @param array<string, mixed> $data */

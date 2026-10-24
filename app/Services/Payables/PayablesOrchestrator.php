@@ -34,7 +34,7 @@ class PayablesOrchestrator
         $invoice = $this->create($user, [
             'source' => $meta['source'] ?? 'upload',
             'original_filename' => $file->getClientOriginalName(),
-            'file_path' => $file->store('invoices'),
+            'file_path' => $file->store('invoices', config('handlemyap.uploads_disk')),
             'external_ref' => $meta['external_ref'] ?? null,
             'metadata' => $meta['metadata'] ?? null,
         ]);
