@@ -4,22 +4,22 @@
 <div class="min-h-[70vh] flex items-center justify-center">
     <div class="w-full max-w-sm">
         <div class="text-center mb-6">
-            <div class="text-2xl font-semibold text-slate-900">Handlemy<span class="text-indigo-600">AP</span></div>
-            <p class="text-sm text-slate-500 mt-1">AI reads your invoices and pays them via PayPal.</p>
+            <a href="/" class="inline-block text-2xl font-semibold text-slate-900">Handlemy<span class="text-brand-600">AP</span></a>
+            <p class="text-sm text-slate-500 mt-1">Your vendors send the invoices. AI helps you pay them via PayPal.</p>
         </div>
-        <form method="POST" action="/login" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+        <form method="POST" action="/login" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
             @csrf
             @error('email')<p class="text-sm text-rose-600">{{ $message }}</p>@enderror
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input name="email" type="email" value="{{ old('email') }}" required autofocus
-                       class="w-full rounded-lg border-slate-300 border px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="username"
+                       class="w-full rounded-lg border-slate-300 border px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Password</label>
                 <div class="relative">
-                    <input name="password" type="password" required
-                           class="w-full rounded-lg border-slate-300 border px-3 py-2 pr-10 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input id="password" name="password" type="password" required autocomplete="current-password"
+                           class="w-full rounded-lg border-slate-300 border px-3 py-2 pr-10 focus:ring-2 focus:ring-brand-500 focus:outline-none">
                     <button type="button" onclick="togglePw(this)" tabindex="-1" aria-label="Show password"
                             class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
@@ -27,8 +27,8 @@
                     </button>
                 </div>
             </div>
-            <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 py-2 font-medium">Sign in</button>
-            <p class="text-xs text-slate-500 text-center">No account? <a href="/register" class="text-indigo-600 hover:underline">Create one</a></p>
+            <button class="w-full bg-brand-600 hover:bg-brand-700 text-white rounded-full px-3 py-2 font-medium">Sign in</button>
+            <p class="text-xs text-slate-500 text-center">No account? <a href="/register" class="text-brand-600 hover:underline">Create one</a></p>
         </form>
     </div>
 </div>

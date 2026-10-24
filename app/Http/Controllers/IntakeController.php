@@ -48,7 +48,7 @@ class IntakeController extends Controller
         // Keep the uploaded document attached for reference.
         if ($request->hasFile('file')) {
             $invoice->update([
-                'file_path' => $request->file('file')->store('invoices', config('handlemyap.uploads_disk')),
+                'file_path' => $request->file('file')->store('invoices'),
                 'original_filename' => $request->file('file')->getClientOriginalName(),
             ]);
         }

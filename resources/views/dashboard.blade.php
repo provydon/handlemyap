@@ -9,25 +9,25 @@
 
 {{-- Intake link — the main way invoices arrive --}}
 @php($intake = url('/u/'.auth()->user()->handle))
-<div class="bg-indigo-600 rounded-xl p-5 mb-5 text-white">
+<div class="bg-brand-600 rounded-2xl p-5 mb-5 text-white">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <div class="font-medium">Your invoice intake link</div>
-            <p class="text-sm text-indigo-100 mt-0.5">Share it with your vendors — their invoices land straight in the queue below. No more digging through email or WhatsApp.</p>
+            <p class="text-sm text-brand-100 mt-0.5">Share it with your vendors — their invoices land straight in the queue below. No more digging through email or WhatsApp.</p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
             <input id="intake-url" readonly value="{{ $intake }}"
                    class="rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white w-56 max-w-full">
-            <button onclick="copyIntake(this)" class="rounded-lg bg-white text-indigo-700 px-3 py-2 text-sm font-medium hover:bg-indigo-50">Copy</button>
-            <a href="{{ $intake }}" target="_blank" class="rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10">Open</a>
+            <button onclick="copyIntake(this)" class="rounded-full bg-white text-brand-700 px-4 py-2 text-sm font-medium hover:bg-brand-50">Copy</button>
+            <a href="{{ $intake }}" target="_blank" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Open</a>
         </div>
     </div>
 </div>
 
 {{-- Stats --}}
 <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-    @foreach (['needs_review' => ['Needs review','amber'], 'scheduled' => ['Scheduled','sky'], 'paid' => ['Paid','emerald'], 'paid_amount' => ['Paid total','indigo']] as $key => [$label, $c])
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
+    @foreach (['needs_review' => ['Needs review','amber'], 'scheduled' => ['Scheduled','sky'], 'paid' => ['Paid','emerald'], 'paid_amount' => ['Paid total','brand']] as $key => [$label, $c])
+    <div class="bg-white rounded-2xl border border-slate-200 p-4">
         <div class="text-xs uppercase tracking-wide text-slate-400">{{ $label }}</div>
         <div class="text-2xl font-semibold text-{{ $c }}-600 mt-1" data-stat="{{ $key }}">—</div>
     </div>
@@ -41,32 +41,32 @@
     </summary>
     <div class="grid md:grid-cols-2 gap-4 mt-3">
         <form method="POST" action="/app/invoices" enctype="multipart/form-data"
-              class="bg-white rounded-xl border border-slate-200 p-4">
+              class="bg-white rounded-2xl border border-slate-200 p-4">
             @csrf
             <div class="font-medium text-slate-800 mb-2">Upload an invoice</div>
             <p class="text-xs text-slate-500 mb-3">PDF, image, or .txt/.json — any layout. The AI reads it.</p>
-            <input type="file" name="file" required
-                   class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-indigo-700">
-            <button class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-sm font-medium">Read & queue</button>
+            <input id="upload-file" type="file" name="file" required aria-label="Invoice file"
+                   class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-brand-700">
+            <button class="mt-3 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 text-sm font-medium">Read & queue</button>
         </form>
 
-        <form method="POST" action="/app/invoices" class="bg-white rounded-xl border border-slate-200 p-4">
+        <form method="POST" action="/app/invoices" class="bg-white rounded-2xl border border-slate-200 p-4">
             @csrf
             <div class="font-medium text-slate-800 mb-2">Quick add</div>
             <div class="grid grid-cols-2 gap-2">
-                <input name="vendor_name" placeholder="Vendor" required class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <input name="vendor_email" type="email" placeholder="Payout email" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <input name="amount" type="number" step="0.01" placeholder="Amount" required class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <input name="currency" value="USD" maxlength="3" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
-                <input name="due_date" type="date" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input id="qa-vendor_name" name="vendor_name" placeholder="Vendor" required aria-label="Vendor" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input id="qa-vendor_email" name="vendor_email" type="email" placeholder="Payout email" aria-label="Payout email" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input id="qa-amount" name="amount" type="number" step="0.01" placeholder="Amount" required aria-label="Amount" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <input id="qa-currency" name="currency" value="USD" maxlength="3" aria-label="Currency" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
+                <input id="qa-due_date" name="due_date" type="date" aria-label="Due date" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
-            <button class="mt-3 bg-slate-800 hover:bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">Add</button>
+            <button class="mt-3 bg-slate-800 hover:bg-slate-900 text-white rounded-full px-4 py-2 text-sm font-medium">Add</button>
         </form>
     </div>
 </details>
 
 {{-- Queue --}}
-<div class="bg-white rounded-xl border border-slate-200 p-4">
+<div class="bg-white rounded-2xl border border-slate-200 p-4">
     <div class="font-medium text-slate-800 mb-3">Invoice queue</div>
     <div id="grid" class="ag-theme-quartz" style="height: 460px; width: 100%;"></div>
     <div id="fallback" class="hidden overflow-x-auto"></div>
@@ -111,9 +111,9 @@ function submitAction(id, verb) {
 }
 function actionButtons(id, status) {
     if (!ACTIONABLE.includes(status)) return '';
-    const btn = (verb, label, cls) => `<button onclick="submitAction(${id},'${verb}')" class="px-2 py-1 rounded text-xs font-medium ${cls}">${label}</button>`;
+    const btn = (verb, label, cls) => `<button onclick="submitAction(${id},'${verb}')" class="px-3 py-1 rounded-full text-xs font-medium ${cls}">${label}</button>`;
     return `<div class="flex gap-1">
-        ${btn('approve','Approve & pay','bg-indigo-600 text-white hover:bg-indigo-700')}
+        ${btn('approve','Approve & pay','bg-brand-600 text-white hover:bg-brand-700')}
         ${btn('hold','Hold','bg-slate-100 text-slate-700 hover:bg-slate-200')}
         ${btn('reject','Reject','bg-rose-50 text-rose-600 hover:bg-rose-100')}
     </div>`;
@@ -144,7 +144,7 @@ async function load() {
                 { headerName: 'Status', field: 'status', maxWidth: 140, cellRenderer: p => badge(p.value) },
                 { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
                 { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
-                { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-indigo-600 hover:underline">view</a>` : '' },
+                { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : '' },
                 { headerName: 'Action', minWidth: 220, cellRenderer: p => actionButtons(p.data.id, p.data.status) },
             ],
         });
@@ -167,7 +167,7 @@ function renderFallback(rows) {
             <td class="pr-3">${r.due_date ?? ''}</td>
             <td class="pr-3">${badge(r.status)}</td>
             <td class="pr-3 text-slate-500">${r.reasons ?? ''}</td>
-            <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-indigo-600 hover:underline">view</a>` : ''}</td>
+            <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : ''}</td>
             <td>${actionButtons(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
 }
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HandlemyAP — API & MCP docs</title>
     <meta name="description" content="Embed HandlemyAP in your app: submit invoices over REST or MCP and let AI read them and your rules pay them via PayPal.">
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    @include('partials.head')
 </head>
 <body class="bg-white text-slate-800 antialiased">
 
@@ -14,15 +14,15 @@
 {{-- Nav --}}
 <header class="border-b border-slate-100 sticky top-0 bg-white/90 backdrop-blur z-10">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <a href="/" class="font-semibold text-lg">Handlemy<span class="text-indigo-600">AP</span></a>
+        <a href="/" class="font-semibold text-lg">Handlemy<span class="text-brand-600">AP</span></a>
         <nav class="flex items-center gap-5 text-sm">
             <a href="#rest" class="text-slate-600 hover:text-slate-900 hidden sm:inline">REST API</a>
             <a href="#mcp" class="text-slate-600 hover:text-slate-900 hidden sm:inline">MCP</a>
             <a href="https://github.com/provydon/handlemyap" class="text-slate-600 hover:text-slate-900">GitHub</a>
             @auth
-                <a href="/settings" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Get a token</a>
+                <a href="/settings" class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 font-medium">Get a token</a>
             @else
-                <a href="/register" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Get started</a>
+                <a href="/register" class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 font-medium">Get started</a>
             @endauth
         </nav>
     </div>
@@ -40,7 +40,7 @@
             'lifecycle' => 'Invoice lifecycle',
             'idempotency' => 'Idempotency',
         ] as $anchor => $label)
-            <a href="#{{ $anchor }}" class="block text-slate-500 hover:text-indigo-600 py-1">{{ $label }}</a>
+            <a href="#{{ $anchor }}" class="block text-slate-500 hover:text-brand-600 py-1">{{ $label }}</a>
         @endforeach
     </aside>
 
@@ -54,18 +54,18 @@
                 parking anything outside the rules for a human. Two ways to integrate:
             </p>
             <div class="grid sm:grid-cols-2 gap-4 mt-6">
-                <div class="rounded-xl border border-slate-200 p-5">
+                <div class="rounded-2xl border border-slate-200 p-5">
                     <div class="font-semibold text-slate-900">REST API</div>
                     <p class="text-sm text-slate-500 mt-1">Classic HTTP + JSON. Best for backends and webhooks — e.g. a platform paying its contractors.</p>
                 </div>
-                <div class="rounded-xl border border-slate-200 p-5">
+                <div class="rounded-2xl border border-slate-200 p-5">
                     <div class="font-semibold text-slate-900">MCP server</div>
                     <p class="text-sm text-slate-500 mt-1">Model Context Protocol. Point an AI agent (Claude, etc.) at it and it can submit and approve payables as tools.</p>
                 </div>
             </div>
             <p class="mt-5 text-sm text-slate-500">
                 Both surfaces call the exact same engine, so behaviour is identical. Base URL:
-                <code class="bg-slate-100 rounded px-1.5 py-0.5 text-indigo-700">{{ $base }}</code>
+                <code class="bg-slate-100 rounded px-1.5 py-0.5 text-brand-700">{{ $base }}</code>
             </p>
         </section>
 
@@ -73,10 +73,10 @@
         <section id="auth">
             <h2 class="text-2xl font-bold text-slate-900">Authentication</h2>
             <p class="mt-3 text-slate-600 max-w-2xl">
-                Create an API token in <a href="/settings" class="text-indigo-600 hover:underline">Settings → API tokens</a>
+                Create an API token in <a href="/settings" class="text-brand-600 hover:underline">Settings → API tokens</a>
                 and send it as a bearer header. Every request is scoped to that token’s account.
             </p>
-            <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto mt-4">
+            <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto mt-4">
 <pre class="whitespace-pre">Authorization: Bearer &lt;your-token&gt;</pre>
             </div>
         </section>
@@ -86,7 +86,7 @@
             <h2 class="text-2xl font-bold text-slate-900">REST API <span class="text-slate-400 font-normal text-lg">/api/v1</span></h2>
 
             <div class="mt-5 overflow-x-auto">
-                <table class="w-full text-sm border border-slate-200 rounded-xl overflow-hidden">
+                <table class="w-full text-sm border border-slate-200 rounded-2xl overflow-hidden">
                     <thead class="bg-slate-50 text-slate-600 text-left">
                         <tr><th class="px-4 py-2 font-medium">Method</th><th class="px-4 py-2 font-medium">Path</th><th class="px-4 py-2 font-medium">What it does</th></tr>
                     </thead>
@@ -104,7 +104,7 @@
                             ['PUT', '/api/v1/rules', 'Update your auto-approval rules.'],
                         ] as [$m, $p, $d])
                         <tr>
-                            <td class="px-4 py-2"><span class="font-mono text-xs font-semibold {{ $m === 'GET' ? 'text-emerald-600' : 'text-indigo-600' }}">{{ $m }}</span></td>
+                            <td class="px-4 py-2"><span class="font-mono text-xs font-semibold {{ $m === 'GET' ? 'text-emerald-600' : 'text-brand-600' }}">{{ $m }}</span></td>
                             <td class="px-4 py-2 font-mono text-xs text-slate-700">{{ $p }}</td>
                             <td class="px-4 py-2 text-slate-500">{{ $d }}</td>
                         </tr>
@@ -114,7 +114,7 @@
             </div>
 
             <h3 class="font-semibold text-slate-900 mt-8 mb-2">Submit an invoice</h3>
-            <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
+            <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre"><span class="text-slate-400"># AI extracts, rules decide, PayPal pays</span>
 curl -X POST {{ $base }}/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
@@ -138,13 +138,13 @@ curl -X POST {{ $base }}/api/v1/invoices \
             </p>
 
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Endpoint</h3>
-            <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
+            <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre">{{ $base }}/mcp      <span class="text-slate-400"># POST, JSON-RPC 2.0, Bearer auth</span></pre>
             </div>
 
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Connect a client</h3>
             <p class="text-sm text-slate-500 mb-2">Add it to any MCP client that supports HTTP transport, e.g.:</p>
-            <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
+            <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre">{
   "mcpServers": {
     "handlemyap": {
@@ -165,15 +165,15 @@ curl -X POST {{ $base }}/api/v1/invoices \
                     ['approve_invoice', 'Release a parked invoice — the human-in-the-loop step.'],
                     ['list_payouts', 'See PayPal payouts and their settlement status.'],
                 ] as [$t, $d])
-                <div class="rounded-xl border border-slate-200 p-4">
-                    <code class="text-indigo-600 text-sm">{{ $t }}</code>
+                <div class="rounded-2xl border border-slate-200 p-4">
+                    <code class="text-brand-600 text-sm">{{ $t }}</code>
                     <p class="text-sm text-slate-500 mt-1">{{ $d }}</p>
                 </div>
                 @endforeach
             </div>
 
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Call a tool directly</h3>
-            <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
+            <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre">curl -X POST {{ $base }}/mcp \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
   -H <span class="text-emerald-300">"Content-Type: application/json"</span> \
@@ -211,7 +211,7 @@ curl -X POST {{ $base }}/api/v1/invoices \
         <section id="idempotency">
             <h2 class="text-2xl font-bold text-slate-900">Idempotency</h2>
             <p class="mt-3 text-slate-600 max-w-2xl">
-                Pass <code class="bg-slate-100 rounded px-1.5 py-0.5 text-indigo-700">external_ref</code> on submit —
+                Pass <code class="bg-slate-100 rounded px-1.5 py-0.5 text-brand-700">external_ref</code> on submit —
                 your own stable key (e.g. <code class="bg-slate-100 rounded px-1 py-0.5">order:12345:payment</code>).
                 Resubmitting the same reference returns the existing invoice instead of creating a duplicate, so retries
                 and at-least-once webhooks are safe.
@@ -219,7 +219,7 @@ curl -X POST {{ $base }}/api/v1/invoices \
         </section>
 
         <div class="border-t border-slate-100 pt-8 text-sm text-slate-400">
-            Handlemy<span class="text-indigo-600">AP</span> — AI accounts payable → PayPal ·
+            Handlemy<span class="text-brand-600">AP</span> — AI accounts payable → PayPal ·
             <a href="/" class="hover:text-slate-600">Home</a> ·
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>
         </div>

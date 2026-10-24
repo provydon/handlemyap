@@ -62,12 +62,11 @@ class AiInvoiceExtractor implements InvoiceExtractor
     /** @return array<string, mixed>|null */
     private function documentBlock(Invoice $invoice): ?array
     {
-        $disk = Storage::disk(config('handlemyap.uploads_disk'));
-        if (! $invoice->file_path || ! $disk->exists($invoice->file_path)) {
+        if (! $invoice->file_path || ! Storage::exists($invoice->file_path)) {
             return null;
         }
 
-        $bytes = $disk->get($invoice->file_path);
+        $bytes = Storage::get($invoice->file_path);
         $ext = strtolower(pathinfo($invoice->original_filename ?? $invoice->file_path, PATHINFO_EXTENSION));
         $b64 = base64_encode($bytes);
 

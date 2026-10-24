@@ -6,24 +6,24 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>HandlemyAP — AI accounts payable, paid via PayPal</title>
     <meta name="description" content="Share one link, your vendors send their invoices into your queue, and HandlemyAP reads each one with AI, pays via PayPal under your rules, and flags irregularities — duplicates, overcharges, unfamiliar vendors — for you to approve.">
-    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    @include('partials.head')
 </head>
 <body class="bg-white text-slate-800 antialiased">
 
 {{-- Nav --}}
 <header class="border-b border-slate-100">
     <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <div class="font-semibold text-lg">Handlemy<span class="text-indigo-600">AP</span></div>
+        <a href="/" class="font-semibold text-lg">Handlemy<span class="text-brand-600">AP</span></a>
         <nav class="flex items-center gap-5 text-sm">
             <a href="#how" class="text-slate-600 hover:text-slate-900 hidden sm:inline">How it works</a>
             <a href="#embed" class="text-slate-600 hover:text-slate-900 hidden sm:inline">For platforms</a>
             <a href="/docs" class="text-slate-600 hover:text-slate-900 hidden sm:inline">Docs</a>
             <a href="https://github.com/provydon/handlemyap" class="text-slate-600 hover:text-slate-900">GitHub</a>
             @auth
-                <a href="/app" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Dashboard</a>
+                <a href="/app" class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 font-medium">Dashboard</a>
             @else
                 <a href="/login" class="text-slate-600 hover:text-slate-900">Sign in</a>
-                <a href="/register" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Get started</a>
+                <a href="/register" class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 font-medium">Get started</a>
             @endauth
         </nav>
     </div>
@@ -31,13 +31,13 @@
 
 {{-- Hero --}}
 <section class="relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-b from-indigo-50 to-white -z-10"></div>
+    <div class="absolute inset-0 bg-gradient-to-b from-brand-50 to-white -z-10"></div>
     <div class="max-w-6xl mx-auto px-5 pt-16 pb-20 text-center">
-        <span class="inline-flex items-center gap-2 rounded-full bg-indigo-100 text-indigo-700 text-xs font-medium px-3 py-1 mb-6">
+        <span class="inline-flex items-center gap-2 rounded-full bg-brand-100 text-brand-700 text-xs font-medium px-3 py-1 mb-6">
             🟦 Built for the PayPal AI Hackathon
         </span>
         <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
-            Your vendors send the invoices. <span class="text-indigo-600">AI helps you pay them.</span>
+            Your vendors send the invoices. <span class="text-brand-600">AI helps you pay them.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
             Share one link. Vendors send their invoices straight into your queue — any format.
@@ -46,14 +46,14 @@
         </p>
         <div class="mt-6 inline-flex items-center gap-2 text-sm">
             <span class="text-slate-400">Your intake link</span>
-            <code class="bg-white border border-slate-200 text-indigo-700 rounded-lg px-3 py-1.5 shadow-sm">handlemyap&hellip;/u/<span class="text-slate-400">yourname</span></code>
+            <code class="bg-white border border-slate-200 text-brand-700 rounded-full px-3 py-1.5 shadow-sm">handlemyap&hellip;/u/<span class="text-slate-400">yourname</span></code>
         </div>
         <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="/register" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-6 py-3 font-medium shadow-sm">
+            <a href="/register" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-700 text-white rounded-full px-6 py-3 font-medium shadow-sm">
                 Get your link →
             </a>
             <a href="https://github.com/provydon/handlemyap"
-               class="inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium border border-slate-300 text-slate-700 hover:bg-slate-50">
+               class="inline-flex items-center justify-center rounded-full px-6 py-3 font-medium border border-slate-300 text-slate-700 hover:bg-slate-50">
                 View the code
             </a>
         </div>
@@ -71,8 +71,8 @@
             ['3', 'Rules decide', 'Auto-approve within your limits, or park it in the review queue.'],
             ['4', 'PayPal pays', 'A PayPal Payout goes to the vendor by email. Scheduled for the due date.'],
         ] as [$n, $t, $d])
-        <div class="bg-white rounded-xl border border-slate-200 p-5">
-            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-sm">{{ $n }}</div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+            <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-semibold text-sm">{{ $n }}</div>
             <div class="font-semibold text-slate-900 mt-3">{{ $t }}</div>
             <p class="text-sm text-slate-500 mt-1">{{ $d }}</p>
         </div>
@@ -92,7 +92,7 @@
                 ['Pays anyone', 'PayPal Payouts reach vendors by email — they don’t need an existing PayPal setup to get paid.'],
                 ['API & MCP first', 'Every action is an API call and an MCP tool, so other apps embed HandlemyAP as their payout engine.'],
             ] as [$t, $d])
-            <div class="bg-white rounded-xl border border-slate-200 p-5">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
                 <div class="font-semibold text-slate-900">{{ $t }}</div>
                 <p class="text-sm text-slate-500 mt-2">{{ $d }}</p>
             </div>
@@ -114,12 +114,12 @@
             <ul class="mt-4 space-y-2 text-sm text-slate-600">
                 <li>✓ REST API <span class="text-slate-400">and</span> an MCP server — give an AI agent the tools directly</li>
                 <li>✓ Sanctum bearer tokens, per-tenant scoping</li>
-                <li>✓ Idempotent via <code class="text-indigo-600">external_ref</code> — safe to retry</li>
+                <li>✓ Idempotent via <code class="text-brand-600">external_ref</code> — safe to retry</li>
                 <li>✓ Same core behind the API, the MCP server and the dashboard</li>
             </ul>
-            <a href="/docs" class="inline-flex items-center mt-5 text-indigo-600 font-medium hover:text-indigo-700">Read the API &amp; MCP docs →</a>
+            <a href="/docs" class="inline-flex items-center mt-5 text-brand-600 font-medium hover:text-brand-700">Read the API &amp; MCP docs →</a>
         </div>
-        <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
+        <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre"><span class="text-slate-400"># Submit a payable — AI extracts, rules decide, PayPal pays</span>
 curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
@@ -132,10 +132,10 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 </section>
 
 {{-- Why HandlemyAP + PayPal --}}
-<section class="bg-slate-900 text-white">
+<section class="bg-brand-900 text-white">
     <div class="max-w-6xl mx-auto px-5 py-16">
         <div class="max-w-2xl">
-            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 text-indigo-200 text-xs font-medium px-3 py-1 mb-4">
+            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 text-brand-200 text-xs font-medium px-3 py-1 mb-4">
                 Why this, and why PayPal
             </span>
             <h2 class="text-2xl sm:text-3xl font-bold">A payables layer that turns bills into PayPal volume.</h2>
@@ -151,7 +151,7 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
                 ['A volume multiplier, not one app', 'Because it’s embeddable over API and MCP, every app that plugs in (a notary-signing platform, a marketplace) routes its payouts through PayPal too. One integration, many apps’ volume.'],
                 ['Responsible agentic payments', 'AI only reads the invoice — genuinely semantic work. A deterministic rule engine decides what pays, with a human in the loop for the rest. An agent can act, never run off with the money.'],
             ] as [$t, $d])
-            <div class="bg-white/5 border border-white/10 rounded-xl p-5">
+            <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <div class="font-semibold">{{ $t }}</div>
                 <p class="text-sm text-slate-300 mt-2">{{ $d }}</p>
             </div>
@@ -161,17 +161,17 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 </section>
 
 {{-- CTA --}}
-<section class="bg-indigo-600">
+<section class="bg-brand-600">
     <div class="max-w-6xl mx-auto px-5 py-14 text-center">
         <h2 class="text-2xl font-bold text-white">Put your payables on autopilot</h2>
-        <p class="text-indigo-100 mt-2">Create an account, share your link, and let the invoices pay themselves via PayPal.</p>
-        <a href="/register" class="inline-block mt-6 bg-white text-indigo-700 hover:bg-indigo-50 rounded-lg px-6 py-3 font-medium">Get your link →</a>
+        <p class="text-brand-100 mt-2">Create an account, share your link, and let the invoices pay themselves via PayPal.</p>
+        <a href="/register" class="inline-block mt-6 bg-white text-brand-700 hover:bg-brand-50 rounded-full px-6 py-3 font-medium">Get your link →</a>
     </div>
 </section>
 
 <footer class="border-t border-slate-100">
     <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-400 gap-2">
-        <div>Handlemy<span class="text-indigo-600">AP</span> — AI accounts payable → PayPal</div>
+        <div>Handlemy<span class="text-brand-600">AP</span> — AI accounts payable → PayPal</div>
         <div class="flex gap-4">
             <a href="/docs" class="hover:text-slate-600">Docs</a>
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>

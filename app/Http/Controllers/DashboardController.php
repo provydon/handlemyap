@@ -81,13 +81,14 @@ class DashboardController extends Controller
         $this->authorizeOwner($request, $invoice);
         abort_unless($invoice->file_path, 404);
 
-        $disk = Storage::disk(config('handlemyap.uploads_disk'));
-        abort_unless($disk->exists($invoice->file_path), 404);
+        abort_unless(Storage::exists($invoice->file_path), 404);
 
         try {
-            return redirect($disk->temporaryUrl($invoice->file_path, now()->addMinutes(5)));
+            // Private S3 bucket → short-lived signed URL the browser fetches directly.
+            return redirect(Storage::temporaryUrl($invoice->file_path, now()->addMinutes(5)));
         } catch (\RuntimeException) {
-            return $disk->download($invoice->file_path, $invoice->original_filename);
+            // Local dev disk can't sign — stream it through the app instead.
+            return Storage::download($invoice->file_path, $invoice->original_filename);
         }
     }
 

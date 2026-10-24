@@ -7,10 +7,12 @@ cd /var/www/html
 sed -ri "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
-# SQLite store for the demo (ephemeral — reseeded on each boot). Swap to the
-# Postgres blueprint (render.yaml) for persistence.
-mkdir -p database
-touch database/database.sqlite
+# Database: driven by DB_URL when set (e.g. Render Postgres — persistent).
+# With no DB_URL, fall back to a local ephemeral SQLite file for a demo boot.
+if [ -z "${DB_URL:-}" ]; then
+    mkdir -p database
+    touch database/database.sqlite
+fi
 
 # First-boot app setup (all idempotent).
 php artisan storage:link || true
