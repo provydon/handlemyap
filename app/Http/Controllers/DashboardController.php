@@ -15,7 +15,7 @@ class DashboardController extends Controller
     }
 
     /** JSON feed for the AG Grid queue + the headline stats. */
-    public function data(Request $request, \App\Services\Payables\PayoutReconciler $reconciler)
+    public function data(Request $request, \App\Services\Payables\PayoutReconciler $reconciler, \App\Services\PayPal\PayoutGateway $gateway)
     {
         // Best-effort: advance any in-flight PayPal payouts before rendering, so
         // the queue reflects real settlement without needing a background worker.
@@ -42,10 +42,13 @@ class DashboardController extends Controller
             'invoices' => $invoices,
             'stats' => [
                 'needs_review' => $invoices->where('status', Invoice::STATUS_NEEDS_REVIEW)->count(),
+                'needs_review_amount' => round($invoices->where('status', Invoice::STATUS_NEEDS_REVIEW)->sum('amount'), 2),
                 'scheduled' => $invoices->where('status', Invoice::STATUS_SCHEDULED)->count(),
+                'scheduled_amount' => round($invoices->where('status', Invoice::STATUS_SCHEDULED)->sum('amount'), 2),
                 'paid' => $invoices->where('status', Invoice::STATUS_PAID)->count(),
                 'paid_amount' => round($invoices->where('status', Invoice::STATUS_PAID)->sum('amount'), 2),
             ],
+            'paypal_balance' => rescue(fn () => $gateway->balance(), null, report: false),
         ]);
     }
 

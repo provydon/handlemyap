@@ -9,14 +9,14 @@
 
 {{-- Intake link — the main way invoices arrive --}}
 @php($intake = url('/u/'.auth()->user()->handle))
-<div class="bg-brand-600 rounded-2xl p-5 mb-5 text-white">
+<div class="bg-brand-600 rounded-2xl p-5 mb-6 text-white">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
             <div class="font-medium">Your invoice intake link</div>
             <p class="text-sm text-brand-100 mt-0.5">Share it with your vendors — their invoices land straight in the queue below. No more digging through email or WhatsApp.</p>
         </div>
         <div class="flex items-center gap-2 shrink-0">
-            <input id="intake-url" readonly value="{{ $intake }}"
+            <input id="intake-url" readonly aria-label="Your intake link" value="{{ $intake }}"
                    class="rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white w-56 max-w-full">
             <button onclick="copyIntake(this)" class="rounded-full bg-white text-brand-700 px-4 py-2 text-sm font-medium hover:bg-brand-50">Copy</button>
             <a href="{{ $intake }}" target="_blank" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Open</a>
@@ -24,14 +24,63 @@
     </div>
 </div>
 
-{{-- Stats --}}
-<div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-    @foreach (['needs_review' => ['Needs review','amber'], 'scheduled' => ['Scheduled','sky'], 'paid' => ['Paid','emerald'], 'paid_amount' => ['Paid total','brand']] as $key => [$label, $c])
-    <div class="bg-white rounded-2xl border border-slate-200 p-4">
-        <div class="text-xs uppercase tracking-wide text-slate-400">{{ $label }}</div>
-        <div class="text-2xl font-semibold text-{{ $c }}-600 mt-1" data-stat="{{ $key }}">—</div>
+{{-- Metrics --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    {{-- Needs review --}}
+    <div onclick="filterStatus('needs_review')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
+        <div class="text-sm font-bold text-slate-700">Needs review</div>
+        <div class="flex items-center mt-3">
+            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-amber-500 shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+            </div>
+            <div class="ml-3 min-w-0">
+                <div class="text-4xl font-semibold leading-none text-slate-900" data-stat="needs_review">—</div>
+                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="needs_review"></div>
+            </div>
+        </div>
     </div>
-    @endforeach
+    {{-- Scheduled --}}
+    <div onclick="filterStatus('scheduled')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
+        <div class="text-sm font-bold text-slate-700">Scheduled</div>
+        <div class="flex items-center mt-3">
+            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-sky-500 shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
+            </div>
+            <div class="ml-3 min-w-0">
+                <div class="text-4xl font-semibold leading-none text-slate-900" data-stat="scheduled">—</div>
+                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="scheduled"></div>
+            </div>
+        </div>
+    </div>
+    {{-- Paid --}}
+    <div onclick="filterStatus('paid')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
+        <div class="text-sm font-bold text-slate-700">Paid</div>
+        <div class="flex items-center mt-3">
+            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-emerald-500 shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+            </div>
+            <div class="ml-3 min-w-0">
+                <div class="text-4xl font-semibold leading-none text-slate-900" data-stat="paid">—</div>
+                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="paid"></div>
+            </div>
+        </div>
+    </div>
+    {{-- PayPal balance --}}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 transition hover:shadow-md">
+        <div class="flex items-center justify-between">
+            <div class="text-sm font-bold text-slate-700">PayPal balance</div>
+            <span class="text-[10px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 rounded px-1.5 py-0.5">PayPal</span>
+        </div>
+        <div class="flex items-center mt-3">
+            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-brand-600 shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9v3"/></svg>
+            </div>
+            <div class="ml-3 min-w-0">
+                <div class="text-4xl font-semibold leading-none text-slate-900 truncate" data-stat="paypal_balance">—</div>
+                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="paypal_balance"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- Add one yourself — secondary, for the odd invoice that didn't come through your link --}}
@@ -66,8 +115,35 @@
 </details>
 
 {{-- Queue --}}
-<div class="bg-white rounded-2xl border border-slate-200 p-4">
-    <div class="font-medium text-slate-800 mb-3">Invoice queue</div>
+<div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+        <div class="font-medium text-slate-800">Invoice queue</div>
+        <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="relative">
+                <svg class="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input id="f-search" type="search" placeholder="Search vendor or invoice #" aria-label="Search invoices"
+                       class="w-full sm:w-64 bg-transparent border-0 border-b border-slate-200 pl-8 py-2 text-sm focus:outline-none focus:border-brand-500">
+            </div>
+            <select id="f-status" aria-label="Filter by status" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
+                <option value="">All statuses</option>
+                <option value="needs_review">Needs review</option>
+                <option value="scheduled">Scheduled</option>
+                <option value="paying">Paying</option>
+                <option value="paid">Paid</option>
+                <option value="held">Held</option>
+                <option value="rejected">Rejected</option>
+                <option value="failed">Failed</option>
+            </select>
+            <select id="f-source" aria-label="Filter by source" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
+                <option value="">All sources</option>
+                <option value="intake">Intake link</option>
+                <option value="upload">Upload</option>
+                <option value="api">API</option>
+                <option value="mcp">MCP</option>
+                <option value="manual">Manual</option>
+            </select>
+        </div>
+    </div>
     <div id="grid" class="ag-theme-quartz" style="height: 460px; width: 100%;"></div>
     <div id="fallback" class="hidden overflow-x-auto"></div>
     <div id="empty" class="hidden text-center text-slate-400 py-10 text-sm">No invoices yet — share your intake link above and they’ll show up here.</div>
@@ -128,38 +204,82 @@ function actionButtons(id, status) {
     </div>`;
 }
 
-async function load() {
-    const res = await fetch('/app/data');
-    const { invoices, stats } = await res.json();
+let gridApi = null;
+let allInvoices = [];
 
-    document.querySelectorAll('[data-stat]').forEach(el => {
-        const k = el.dataset.stat;
-        el.textContent = k === 'paid_amount' ? money(stats.paid_amount, 'USD') : stats[k];
+function renderStats(stats, balance) {
+    const set = (k, v) => { const el = document.querySelector(`[data-stat="${k}"]`); if (el) el.textContent = v; };
+    const sub = (k, v) => { const el = document.querySelector(`[data-substat="${k}"]`); if (el) el.textContent = v; };
+    set('needs_review', stats.needs_review); sub('needs_review', money(stats.needs_review_amount, 'USD') + ' pending');
+    set('scheduled', stats.scheduled);       sub('scheduled', money(stats.scheduled_amount, 'USD') + ' scheduled');
+    set('paid', stats.paid);                 sub('paid', money(stats.paid_amount, 'USD') + ' paid');
+    if (balance) { set('paypal_balance', money(balance.available, balance.currency)); sub('paypal_balance', balance.demo ? 'Sandbox (demo)' : 'Available'); }
+    else { set('paypal_balance', '—'); sub('paypal_balance', 'Not connected'); }
+}
+
+const COLUMNS = [
+    { headerName: 'Vendor', field: 'vendor', minWidth: 140 },
+    { headerName: 'Invoice #', field: 'invoice_number', maxWidth: 120 },
+    { headerName: 'Amount', valueGetter: p => money(p.data.amount, p.data.currency), maxWidth: 130 },
+    { headerName: 'Due', field: 'due_date', maxWidth: 120 },
+    { headerName: 'Status', field: 'status', maxWidth: 140, cellRenderer: p => badge(p.value) },
+    { headerName: 'Source', field: 'source', maxWidth: 110 },
+    { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
+    { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
+    { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : '' },
+    { headerName: 'Action', minWidth: 220, cellRenderer: p => actionButtons(p.data.id, p.data.status) },
+];
+
+function filterStatus(status) {
+    document.getElementById('f-status').value = status;
+    applyFilters();
+    document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function applyFilters() {
+    const q = (document.getElementById('f-search').value || '').toLowerCase().trim();
+    const st = document.getElementById('f-status').value;
+    const src = document.getElementById('f-source').value;
+
+    const filtered = allInvoices.filter(r => {
+        if (st && r.status !== st) return false;
+        if (src && r.source !== src) return false;
+        if (q && !`${r.vendor||''} ${r.invoice_number||''} ${r.email||''}`.toLowerCase().includes(q)) return false;
+        return true;
     });
 
     const gridEl = document.getElementById('grid');
+    const fb = document.getElementById('fallback');
     const emptyEl = document.getElementById('empty');
-    if (!invoices.length) { gridEl.classList.add('hidden'); emptyEl.classList.remove('hidden'); return; }
 
-    if (window.agGrid && agGrid.createGrid) {
-        agGrid.createGrid(gridEl, {
-            rowData: invoices,
-            defaultColDef: { resizable: true, sortable: true, flex: 1 },
-            columnDefs: [
-                { headerName: 'Vendor', field: 'vendor', minWidth: 140 },
-                { headerName: 'Invoice #', field: 'invoice_number', maxWidth: 120 },
-                { headerName: 'Amount', valueGetter: p => money(p.data.amount, p.data.currency), maxWidth: 130 },
-                { headerName: 'Due', field: 'due_date', maxWidth: 120 },
-                { headerName: 'Status', field: 'status', maxWidth: 140, cellRenderer: p => badge(p.value) },
-                { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
-                { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
-                { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : '' },
-                { headerName: 'Action', minWidth: 220, cellRenderer: p => actionButtons(p.data.id, p.data.status) },
-            ],
-        });
-    } else {
-        renderFallback(invoices); // CDN failed — still usable
+    if (!filtered.length) {
+        gridEl.classList.add('hidden'); fb.classList.add('hidden');
+        emptyEl.classList.remove('hidden');
+        emptyEl.textContent = allInvoices.length
+            ? 'No invoices match your filters.'
+            : 'No invoices yet — share your intake link above and they’ll show up here.';
+        return;
     }
+
+    emptyEl.classList.add('hidden');
+    if (gridApi) { gridEl.classList.remove('hidden'); fb.classList.add('hidden'); gridApi.setGridOption('rowData', filtered); }
+    else { renderFallback(filtered); }
+}
+
+async function load() {
+    const res = await fetch('/app/data');
+    const data = await res.json();
+    allInvoices = data.invoices || [];
+    renderStats(data.stats, data.paypal_balance);
+
+    if (window.agGrid && agGrid.createGrid && !gridApi) {
+        gridApi = agGrid.createGrid(document.getElementById('grid'), {
+            rowData: [],
+            defaultColDef: { resizable: true, sortable: true, flex: 1 },
+            columnDefs: COLUMNS,
+        });
+    }
+    applyFilters();
 }
 
 function renderFallback(rows) {
@@ -169,16 +289,23 @@ function renderFallback(rows) {
     el.innerHTML = `<table class="min-w-full text-sm">
         <thead><tr class="text-left text-slate-400 border-b">
             <th class="py-2 pr-3">Vendor</th><th class="pr-3">Amount</th><th class="pr-3">Due</th>
-            <th class="pr-3">Status</th><th class="pr-3">Why / note</th><th class="pr-3">Doc</th><th>Action</th></tr></thead>
+            <th class="pr-3">Status</th><th class="pr-3">Source</th><th class="pr-3">Why / note</th><th class="pr-3">Doc</th><th>Action</th></tr></thead>
         <tbody>${rows.map(r => `<tr class="border-b border-slate-100">
             <td class="py-2 pr-3">${r.vendor ?? ''}</td>
             <td class="pr-3">${money(r.amount, r.currency)}</td>
             <td class="pr-3">${r.due_date ?? ''}</td>
             <td class="pr-3">${badge(r.status)}</td>
+            <td class="pr-3 text-slate-500">${r.source ?? ''}</td>
             <td class="pr-3 text-slate-500">${r.reasons ?? ''}</td>
             <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : ''}</td>
             <td>${actionButtons(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
 }
+
+['f-search','f-status','f-source'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', applyFilters);
+    el.addEventListener('change', applyFilters);
+});
 
 load();
 </script>

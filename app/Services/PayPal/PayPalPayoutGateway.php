@@ -90,6 +90,37 @@ class PayPalPayoutGateway implements PayoutGateway
         return strtoupper((string) $response->json('batch_header.batch_status'));
     }
 
+    public function balance(): ?array
+    {
+        $token = $this->accessToken();
+        if ($token === null) {
+            return null;
+        }
+
+        $response = Http::withToken($token)->acceptJson()
+            ->get($this->base.'/v1/reporting/balances');
+
+        if ($response->failed()) {
+            return null; // e.g. the Transaction Search / Reporting product isn't enabled (403)
+        }
+
+        $balances = $response->json('balances', []);
+
+        // 200 with no balances = a real (reachable) account that simply holds no
+        // funds yet — show zero rather than hiding the metric.
+        if (empty($balances)) {
+            return ['currency' => 'USD', 'available' => 0.0];
+        }
+
+        // Prefer the primary balance; fall back to the first currency.
+        $primary = collect($balances)->firstWhere('primary', true) ?? $balances[0];
+
+        return [
+            'currency' => $primary['available_balance']['currency_code'] ?? ($primary['currency'] ?? 'USD'),
+            'available' => (float) ($primary['available_balance']['value'] ?? 0),
+        ];
+    }
+
     private function accessToken(): ?string
     {
         $response = Http::asForm()

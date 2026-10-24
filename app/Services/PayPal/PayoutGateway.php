@@ -15,4 +15,13 @@ interface PayoutGateway
      * (e.g. PENDING, PROCESSING, SUCCESS, DENIED), or null if it can't be read.
      */
     public function status(string $batchId): ?string;
+
+    /**
+     * The account's available balance as ['currency' => 'USD', 'available' => float],
+     * or null if it can't be read (e.g. the Reporting / "Transaction Search"
+     * product isn't enabled on the PayPal app). Read-only.
+     *
+     * @return array{currency: string, available: float, demo?: bool}|null
+     */
+    public function balance(): ?array;
 }

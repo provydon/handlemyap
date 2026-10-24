@@ -25,4 +25,10 @@ class FakePayoutGateway implements PayoutGateway
     {
         return 'SUCCESS';
     }
+
+    public function balance(): ?array
+    {
+        // No real account in offline/demo mode — a believable figure for the UI.
+        return ['currency' => 'USD', 'available' => 2500.00, 'demo' => true];
+    }
 }
