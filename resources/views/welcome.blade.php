@@ -17,6 +17,7 @@
         <nav class="flex items-center gap-5 text-sm">
             <a href="#how" class="text-slate-600 hover:text-slate-900 hidden sm:inline">How it works</a>
             <a href="#embed" class="text-slate-600 hover:text-slate-900 hidden sm:inline">For platforms</a>
+            <a href="/docs" class="text-slate-600 hover:text-slate-900 hidden sm:inline">Docs</a>
             <a href="https://github.com/provydon/handlemyap" class="text-slate-600 hover:text-slate-900">GitHub</a>
             @auth
                 <a href="/app" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 font-medium">Dashboard</a>
@@ -106,10 +107,12 @@
                 then calls you back. A notary-signing platform paying notaries, for example, plugs in as a payout rail.
             </p>
             <ul class="mt-4 space-y-2 text-sm text-slate-600">
+                <li>✓ REST API <span class="text-slate-400">and</span> an MCP server — give an AI agent the tools directly</li>
                 <li>✓ Sanctum bearer tokens, per-tenant scoping</li>
                 <li>✓ Idempotent via <code class="text-indigo-600">external_ref</code> — safe to retry</li>
                 <li>✓ Same core behind the API, the MCP server and the dashboard</li>
             </ul>
+            <a href="/docs" class="inline-flex items-center mt-5 text-indigo-600 font-medium hover:text-indigo-700">Read the API &amp; MCP docs →</a>
         </div>
         <div class="bg-slate-900 rounded-xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre"><span class="text-slate-400"># Submit a payable — AI extracts, rules decide, PayPal pays</span>
@@ -119,6 +122,35 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
   -d vendor_email=<span class="text-amber-200">jane@example.com</span> \
   -d amount=<span class="text-amber-200">125.00</span> -d currency=<span class="text-amber-200">USD</span> \
   -d external_ref=<span class="text-amber-200">order:12345:notary-payment</span></pre>
+        </div>
+    </div>
+</section>
+
+{{-- Why HandlemyAP + PayPal --}}
+<section class="bg-slate-900 text-white">
+    <div class="max-w-6xl mx-auto px-5 py-16">
+        <div class="max-w-2xl">
+            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 text-indigo-200 text-xs font-medium px-3 py-1 mb-4">
+                Why this, and why PayPal
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-bold">A payables layer that turns bills into PayPal volume.</h2>
+            <p class="mt-3 text-slate-300">
+                Most payment AI is about checkout — money <em>in</em>. HandlemyAP is the other side: money
+                <em>out</em>. It’s accounts payable packaged as a service other apps absorb, and every
+                invoice it clears settles on PayPal Payouts.
+            </p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-5 mt-10">
+            @foreach ([
+                ['PayPal is the rail — by design', 'Approval rules exist to gate a PayPal payout. Remove the rail and there’s no product. Payouts reach any vendor by email — no existing PayPal setup required.'],
+                ['A volume multiplier, not one app', 'Because it’s embeddable over API and MCP, every app that plugs in (a notary-signing platform, a marketplace) routes its payouts through PayPal too. One integration, many apps’ volume.'],
+                ['Responsible agentic payments', 'AI only reads the invoice — genuinely semantic work. A deterministic rule engine decides what pays, with a human in the loop for the rest. An agent can act, never run off with the money.'],
+            ] as [$t, $d])
+            <div class="bg-white/5 border border-white/10 rounded-xl p-5">
+                <div class="font-semibold">{{ $t }}</div>
+                <p class="text-sm text-slate-300 mt-2">{{ $d }}</p>
+            </div>
+            @endforeach
         </div>
     </div>
 </section>
@@ -136,6 +168,7 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
     <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-400 gap-2">
         <div>Handlemy<span class="text-indigo-600">AP</span> — AI accounts payable → PayPal</div>
         <div class="flex gap-4">
+            <a href="/docs" class="hover:text-slate-600">Docs</a>
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>
             <a href="/login" class="hover:text-slate-600">Sign in</a>
         </div>

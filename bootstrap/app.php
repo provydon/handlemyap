@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Behind Render's load balancer — trust it for correct HTTPS URLs/cookies.
         $middleware->trustProxies(at: '*');
+
+        // The MCP endpoint is a stateless JSON-RPC API authed by bearer token, not a form.
+        $middleware->validateCsrfTokens(except: ['mcp']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -3,10 +3,18 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IntakeController;
+use App\Http\Controllers\McpController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'))->name('home');
+
+// Developer docs for the API + MCP server (public).
+Route::view('/docs', 'docs')->name('docs');
+
+// MCP server — JSON-RPC 2.0 over HTTP, Sanctum bearer auth (see McpController).
+Route::post('/mcp', [McpController::class, 'handle'])->name('mcp');
+Route::get('/mcp', [McpController::class, 'info']);
 
 // Public invoice intake — vendors submit to /u/{handle} with no login.
 Route::get('/u/{handle}', [IntakeController::class, 'show'])->name('intake');
