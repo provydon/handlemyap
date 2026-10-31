@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/rules', [SettingsController::class, 'updateRule']);
     Route::post('/settings/handle', [SettingsController::class, 'updateHandle']);
     Route::post('/settings/currency', [SettingsController::class, 'updateCurrency']);
+    Route::post('/settings/payout-routes', [SettingsController::class, 'updatePayoutRoutes']);
     Route::get('/app/vendors', [VendorController::class, 'index'])->name('vendors');
     Route::post('/app/vendors/{vendor}/bank', [VendorController::class, 'storeBank']);
 

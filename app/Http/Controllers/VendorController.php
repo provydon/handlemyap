@@ -4,34 +4,71 @@ namespace App\Http\Controllers;
 
 use App\Models\Vendor;
 use App\Services\Payouts\DwollaConnector;
+use App\Services\Payouts\PayoutGatewayResolver;
+use App\Services\Payouts\PaystackConnector;
+use App\Services\Payouts\RailCatalog;
 use Illuminate\Http\Request;
 
 class VendorController extends Controller
 {
-    /** Vendors page — manage who gets paid and attach each one's bank for ACH. */
+    public function __construct(
+        private readonly PayoutGatewayResolver $resolver,
+        private readonly RailCatalog $catalog,
+    ) {}
+
+    /** Vendors page — manage who gets paid and attach each one's bank per rail. */
     public function index(Request $request)
     {
-        $vendors = $request->user()->vendors()->orderBy('name')->get();
+        $vendors = $request->user()->vendors()->with('payoutMethods')->orderBy('name')->get();
 
-        return view('vendors', ['vendors' => $vendors]);
+        // Resolve each vendor's rail (by country) so the view shows the right
+        // bank form and whether a destination is already on file.
+        $routing = $vendors->mapWithKeys(function (Vendor $vendor) use ($request) {
+            $rail = $this->resolver->railFor($request->user(), $vendor);
+
+            return [$vendor->id => [
+                'rail' => $rail,
+                'country' => $this->resolver->countryFor($vendor),
+                'provider' => $rail ? ($this->catalog->get($rail)['provider'] ?? null) : null,
+                'usable' => $rail ? $this->catalog->isUsable($rail) : false,
+                'connected' => $rail ? $vendor->hasPayoutMethod($rail) : false,
+            ]];
+        });
+
+        return view('vendors', [
+            'vendors' => $vendors,
+            'routing' => $routing,
+            'banks' => app(PaystackConnector::class)->banks('NGN'),
+        ]);
     }
 
     /**
-     * Register a vendor's bank as a Dwolla funding source so they can be paid by
-     * ACH. A vendor only *receives*, so a receive-only (unverified) funding
-     * source is sufficient — no Plaid/verification needed on their side.
+     * Attach a vendor's bank for the rail that serves their country. US vendors
+     * register a Dwolla funding source; Nigerian vendors a Paystack transfer
+     * recipient. Either way we keep only the provider's destination id.
      */
-    public function storeBank(Request $request, Vendor $vendor, DwollaConnector $dwolla)
+    public function storeBank(Request $request, Vendor $vendor)
     {
         abort_unless($vendor->user_id === $request->user()->id, 403);
 
+        $rail = $this->resolver->railFor($request->user(), $vendor);
+
+        return match ($rail) {
+            'dwolla' => $this->storeDwolla($request, $vendor),
+            'paystack' => $this->storePaystack($request, $vendor),
+            default => $this->bail($request, 'No payout rail is available for this vendor’s country yet.'),
+        };
+    }
+
+    private function storeDwolla(Request $request, Vendor $vendor)
+    {
         $data = $request->validate([
             'routing_number' => 'required|string|size:9',
             'account_number' => 'required|string|max:17',
             'account_type' => 'required|in:checking,savings',
         ]);
 
-        $result = $dwolla->createFundingSource([
+        $result = app(DwollaConnector::class)->createFundingSource([
             'name' => $vendor->name,
             'email' => $vendor->email,
             'routing_number' => $data['routing_number'],
@@ -40,21 +77,69 @@ class VendorController extends Controller
         ]);
 
         if (! $result['ok']) {
-            $message = $result['message'] ?? 'Could not add this bank — check the routing and account numbers.';
-
-            if ($request->expectsJson()) {
-                return response()->json(['message' => $message, 'errors' => ['routing_number' => [$message]]], 422);
-            }
-
-            return back()->withErrors(['routing_number' => $message]);
+            return $this->bail($request, $result['message'] ?? 'Could not add this bank — check the routing and account numbers.', 'routing_number');
         }
 
-        $vendor->update(['dwolla_funding_source_id' => $result['funding_source_id']]);
+        $vendor->payoutMethods()->updateOrCreate(
+            ['rail' => 'dwolla'],
+            [
+                'recipient_ref' => $result['funding_source_id'],
+                'details' => ['account_type' => $data['account_type'], 'account_last4' => substr($data['account_number'], -4)],
+            ],
+        );
 
         if ($request->expectsJson()) {
             return response()->json(['connected' => true, 'vendor_id' => $vendor->id]);
         }
 
         return back()->with('status', "Bank added for {$vendor->name} — they can now be paid by ACH.");
+    }
+
+    private function storePaystack(Request $request, Vendor $vendor)
+    {
+        $data = $request->validate([
+            'bank_code' => 'required|string|max:10',
+            'account_number' => 'required|string|max:20',
+        ]);
+
+        $result = app(PaystackConnector::class)->createTransferRecipient(
+            $vendor->name,
+            $data['account_number'],
+            $data['bank_code'],
+            $vendor->currency ?: 'NGN',
+        );
+
+        if (! $result['ok']) {
+            return $this->bail($request, $result['message'] ?? 'Could not add this bank — check the account number and bank.', 'account_number');
+        }
+
+        $vendor->payoutMethods()->updateOrCreate(
+            ['rail' => 'paystack'],
+            [
+                'recipient_ref' => $result['recipient_code'],
+                'details' => [
+                    'bank_code' => $data['bank_code'],
+                    'bank_name' => $result['bank_name'],
+                    'account_name' => $result['account_name'],
+                    'account_last4' => substr($data['account_number'], -4),
+                ],
+                'verified_at' => now(),
+            ],
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['connected' => true, 'vendor_id' => $vendor->id]);
+        }
+
+        return back()->with('status', "Bank added for {$vendor->name} — they can now be paid by Paystack transfer.");
+    }
+
+    private function bail(Request $request, string $message, string $field = 'bank')
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message, 'errors' => [$field => [$message]]], 422);
+        }
+
+        return back()->withErrors([$field => $message]);
     }
 }

@@ -22,9 +22,6 @@ class PayoutReconciler
     /** @return int number of payouts advanced to a terminal state */
     public function reconcile(User $user): int
     {
-        // Status is read from the same (merchant-owned) account that sent it.
-        $gateway = $this->gateways->for($user);
-
         $payouts = Payout::query()
             ->where('status', Payout::STATUS_PROCESSING)
             ->whereNotNull('provider_ref')
@@ -35,6 +32,10 @@ class PayoutReconciler
         $advanced = 0;
 
         foreach ($payouts as $payout) {
+            // Each payout is polled on the rail it was sent over — a business can
+            // have in-flight payouts across several rails at once.
+            $gateway = $this->gateways->gateway($payout->rail ?: 'dwolla', $user);
+
             $raw = rescue(fn () => $gateway->status($payout->provider_ref), null, false);
             if ($raw === null) {
                 continue;

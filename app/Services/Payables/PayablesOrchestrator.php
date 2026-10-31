@@ -67,7 +67,7 @@ class PayablesOrchestrator
      * Ingest already-structured data (API / MCP). `external_ref` doubles as an
      * idempotency key so an integrator (e.g. NotaryDash) can safely retry.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function ingestData(User $user, array $data): Invoice
     {
@@ -136,13 +136,14 @@ class PayablesOrchestrator
             return null;
         }
 
-        // Pay from the business's connected bank (ACH via Dwolla).
-        $gateway = $this->gateways->for($invoice->user);
+        // Route to the right rail for this vendor's country (Dwolla for the US,
+        // Paystack for Nigeria, …) — honoring the business's per-country choice.
+        ['rail' => $rail, 'gateway' => $gateway] = $this->gateways->resolve($invoice->user, $invoice->vendor);
 
         if ($gateway instanceof UnconnectedPayoutGateway) {
             $invoice->update([
                 'status' => Invoice::STATUS_NEEDS_REVIEW,
-                'review_reasons' => ['Connect a bank for ACH payouts in Settings to pay this invoice.'],
+                'review_reasons' => [$gateway->reason()],
             ]);
 
             return null;
@@ -153,6 +154,7 @@ class PayablesOrchestrator
             'vendor_id' => $invoice->vendor_id,
             'amount' => $invoice->amount,
             'currency' => $invoice->currency,
+            'rail' => $rail,
             'status' => Payout::STATUS_PENDING,
             'scheduled_for' => now(),
         ]);

@@ -38,9 +38,11 @@ class DwollaGateway implements PayoutGateway
 
     public function send(Payout $payout, Vendor $vendor): PayoutResult
     {
-        if (blank($vendor->dwolla_funding_source_id)) {
+        $destination = $vendor->payoutMethod('dwolla')?->recipient_ref;
+
+        if (blank($destination)) {
             return PayoutResult::failed(
-                "Vendor has no bank connected for ACH — add their bank details first."
+                'Vendor has no bank connected for ACH — add their bank details first.'
             );
         }
         if (blank($this->sourceFundingSource)) {
@@ -57,7 +59,7 @@ class DwollaGateway implements PayoutGateway
             ->post($this->base().'/transfers', [
                 '_links' => [
                     'source' => ['href' => $this->fundingSourceHref($this->sourceFundingSource)],
-                    'destination' => ['href' => $this->fundingSourceHref($vendor->dwolla_funding_source_id)],
+                    'destination' => ['href' => $this->fundingSourceHref($destination)],
                 ],
                 'amount' => [
                     'currency' => strtoupper($payout->currency ?: 'USD'),

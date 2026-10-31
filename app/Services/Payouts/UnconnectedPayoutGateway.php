@@ -6,15 +6,24 @@ use App\Models\Payout;
 use App\Models\Vendor;
 
 /**
- * Stand-in for a business that hasn't connected a bank (ACH funding source) yet.
- * There is nothing to pay from, so we fail loudly rather than silently dropping
- * money.
+ * Stand-in for when there's no usable rail for a payout — the vendor's country
+ * has no connected rail, or the business hasn't connected a bank to send from.
+ * It fails loudly (with the specific reason) rather than silently dropping money.
  */
 class UnconnectedPayoutGateway implements PayoutGateway
 {
+    public function __construct(
+        private readonly string $reason = 'Connect a bank for payouts in Settings to pay.',
+    ) {}
+
+    public function reason(): string
+    {
+        return $this->reason;
+    }
+
     public function send(Payout $payout, Vendor $vendor): PayoutResult
     {
-        return PayoutResult::failed('Connect a bank for ACH payouts in Settings to pay.');
+        return PayoutResult::failed($this->reason);
     }
 
     public function status(string $reference): ?string

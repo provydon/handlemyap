@@ -2,22 +2,26 @@
 
 namespace App\Models;
 
+use Database\Factories\PayoutFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payout extends Model
 {
-    /** @use HasFactory<\Database\Factories\PayoutFactory> */
+    /** @use HasFactory<PayoutFactory> */
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_PROCESSING = 'processing';
+
     public const STATUS_PAID = 'paid';
+
     public const STATUS_FAILED = 'failed';
 
     protected $fillable = [
-        'user_id', 'invoice_id', 'vendor_id', 'amount', 'currency', 'status',
+        'user_id', 'invoice_id', 'vendor_id', 'amount', 'currency', 'status', 'rail',
         'provider_ref', 'provider_item_ref', 'provider_status',
         'scheduled_for', 'paid_at', 'failure_reason',
     ];

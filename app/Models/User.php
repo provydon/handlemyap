@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
@@ -20,6 +22,7 @@ class User extends Authenticatable
         'password',
         'handle',
         'default_currency',
+        'payout_routes',
         'dwolla_customer_id',
         'dwolla_funding_source_id',
         'dwolla_bank_name',
@@ -35,7 +38,7 @@ class User extends Authenticatable
     /** A unique public intake handle derived from $base (name or email). */
     public static function makeHandle(string $base): string
     {
-        $slug = \Illuminate\Support\Str::slug($base) ?: 'user';
+        $slug = Str::slug($base) ?: 'user';
         $handle = $slug;
         $i = 1;
         while (static::where('handle', $handle)->exists()) {
@@ -55,6 +58,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'payout_routes' => 'array',
             'dwolla_connected_at' => 'datetime',
         ];
     }

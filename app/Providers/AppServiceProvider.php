@@ -9,6 +9,7 @@ use App\Services\Payouts\DwollaConnector;
 use App\Services\Payouts\DwollaGateway;
 use App\Services\Payouts\FakePayoutGateway;
 use App\Services\Payouts\PayoutGateway;
+use App\Services\Payouts\PaystackConnector;
 use App\Services\Payouts\PlaidConnector;
 use Illuminate\Support\ServiceProvider;
 
@@ -50,6 +51,10 @@ class AppServiceProvider extends ServiceProvider
             (string) ($app['config']['handlemyap.plaid.client_id'] ?? ''),
             (string) ($app['config']['handlemyap.plaid.secret'] ?? ''),
             (string) ($app['config']['handlemyap.plaid.env'] ?? 'sandbox'),
+        ));
+
+        $this->app->bind(PaystackConnector::class, fn ($app) => new PaystackConnector(
+            (string) ($app['config']['handlemyap.paystack.secret'] ?? ''),
         ));
     }
 

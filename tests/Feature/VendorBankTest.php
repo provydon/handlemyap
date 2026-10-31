@@ -45,7 +45,7 @@ class VendorBankTest extends TestCase
             'account_type' => 'checking',
         ])->assertRedirect();
 
-        $this->assertSame('fs-vendor-1', $vendor->refresh()->dwolla_funding_source_id);
+        $this->assertSame('fs-vendor-1', $vendor->refresh()->payoutMethod('dwolla')?->recipient_ref);
     }
 
     public function test_cannot_add_a_bank_to_another_users_vendor(): void
@@ -59,7 +59,7 @@ class VendorBankTest extends TestCase
                 'routing_number' => '222222226', 'account_number' => '1234567890', 'account_type' => 'checking',
             ])->assertForbidden();
 
-        $this->assertNull($vendor->refresh()->dwolla_funding_source_id);
+        $this->assertNull($vendor->refresh()->payoutMethod('dwolla'));
     }
 
     public function test_vendor_bank_validates_routing_number(): void
@@ -71,6 +71,6 @@ class VendorBankTest extends TestCase
             'routing_number' => '123', 'account_number' => '1', 'account_type' => 'checking',
         ])->assertSessionHasErrors('routing_number');
 
-        $this->assertNull($vendor->refresh()->dwolla_funding_source_id);
+        $this->assertNull($vendor->refresh()->payoutMethod('dwolla'));
     }
 }

@@ -3,7 +3,7 @@
 @section('content')
 
 @php($u = auth()->user())
-@php($tabs = ['intake' => 'Intake link', 'bank' => 'Bank (ACH)', 'currency' => 'Currency', 'rules' => 'Auto-approval', 'tokens' => 'API tokens'])
+@php($tabs = ['intake' => 'Intake link', 'bank' => 'Bank (ACH)', 'routing' => 'Payout routing', 'currency' => 'Currency', 'rules' => 'Auto-approval', 'tokens' => 'API tokens'])
 {{-- Active tab: ?tab= query param, else the Bank tab if a connect attempt errored, else the first. --}}
 @php($active = request('tab'))
 @php($active = array_key_exists($active, $tabs) ? $active : ($errors->has('routing_number') ? 'bank' : 'intake'))
@@ -129,6 +129,48 @@
             </form>
         </div>
     </div>
+</div>
+
+{{-- Payout routing — which rail (payment method) pays each country --}}
+<div data-panel="routing" class="{{ $active === 'routing' ? '' : 'hidden' }}">
+    <form method="POST" action="/settings/payout-routes" class="bg-white rounded-2xl border border-slate-200 p-5 max-w-2xl">
+        @csrf
+        <div class="font-medium text-slate-800 mb-1">Payout routing</div>
+        <p class="text-xs text-slate-500 mb-4">A payout is sent on the rail for the vendor's country. Where a country has more than one option, pick which to use — the rest use their only rail.</p>
+
+        <div class="space-y-5">
+            @foreach ($catalog->countries() as $country)
+                @php($rails = $catalog->forCountry($country))
+                @php($chosen = $routes[$country] ?? array_key_first($rails))
+                <div>
+                    <div class="text-sm font-medium text-slate-700 mb-2">{{ $country }}</div>
+                    <div class="space-y-2">
+                        @foreach ($rails as $key => $meta)
+                            @php($usable = $catalog->isUsable($key))
+                            @php($planned = $meta['planned'] ?? false)
+                            <label class="flex items-center gap-3 rounded-xl border px-4 py-2.5 text-sm {{ $usable ? 'border-slate-200 hover:border-slate-300 cursor-pointer' : 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed' }}">
+                                <input type="radio" name="route[{{ $country }}]" value="{{ $key }}"
+                                       @checked($chosen === $key && $usable) @disabled(! $usable || count($rails) < 2) class="text-brand-600">
+                                <span class="flex-1">
+                                    <span class="font-medium {{ $usable ? 'text-slate-800' : '' }}">{{ $meta['provider'] }}</span>
+                                    <span class="text-slate-400">· {{ $meta['method'] }} · {{ $meta['currency'] }}</span>
+                                </span>
+                                @if ($planned)
+                                    <span class="text-[11px] font-medium text-amber-600 bg-amber-50 rounded-full px-2 py-0.5">Coming soon</span>
+                                @elseif (! $catalog->isLive($key) && config('handlemyap.gateway') !== 'fake')
+                                    <span class="text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">Not configured</span>
+                                @elseif (count($rails) < 2)
+                                    <span class="text-[11px] font-medium text-slate-500 bg-slate-100 rounded-full px-2 py-0.5">Only option</span>
+                                @endif
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <button class="mt-5 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 text-sm font-medium">Save routing</button>
+    </form>
 </div>
 
 {{-- Default currency --}}

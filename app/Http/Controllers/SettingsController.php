@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Payouts\DwollaConnector;
 use App\Services\Payouts\PlaidConnector;
+use App\Services\Payouts\RailCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -165,13 +166,38 @@ class SettingsController extends Controller
         return back()->with('status', 'Default currency updated.');
     }
 
-    public function index(Request $request)
+    public function index(Request $request, RailCatalog $catalog)
     {
         return view('settings', [
             'rule' => $request->user()->autoApprovalRule,
             'tokens' => $request->user()->tokens()->latest()->get(),
             'plainToken' => session('plainToken'),
+            'catalog' => $catalog,
+            'routes' => $request->user()->payout_routes ?? [],
         ]);
+    }
+
+    /**
+     * Save the business's per-country rail choice — which payment method to use
+     * for each country a vendor might be in. Only countries with more than one
+     * available rail actually need a choice; the rest fall back to their single
+     * rail.
+     */
+    public function updatePayoutRoutes(Request $request, RailCatalog $catalog)
+    {
+        $routes = [];
+        foreach ($catalog->countries() as $country) {
+            $picked = $request->input("route.{$country}");
+            $available = array_keys($catalog->forCountry($country));
+
+            if ($picked && in_array($picked, $available, true) && $catalog->isUsable($picked)) {
+                $routes[$country] = $picked;
+            }
+        }
+
+        $request->user()->update(['payout_routes' => $routes]);
+
+        return back()->with('status', 'Payout routing saved.');
     }
 
     public function updateRule(Request $request)
