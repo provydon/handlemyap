@@ -60,7 +60,7 @@ class PayoutReconciler
                 'status' => $terminal === Payout::STATUS_PAID ? Invoice::STATUS_PAID : Invoice::STATUS_FAILED,
             ]);
 
-            Cache::forget("payout_balance:{$payout->user_id}"); // settlement changed the balance
+            Cache::forget("payout_balances:{$payout->user_id}"); // settlement changed the balance
 
             $advanced++;
         }

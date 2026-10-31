@@ -41,6 +41,10 @@
 </div>
 @endunless
 
+{{-- Per-rail balances — one chip per funded rail (USD via Dwolla, NGN via
+     Paystack, …). Populated async from /app/balance; hidden until it loads. --}}
+<div id="balances" class="hidden flex-wrap items-center gap-3 mb-6"></div>
+
 {{-- Metrics --}}
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     {{-- Needs review --}}
@@ -359,8 +363,26 @@ async function syncSettlements() {
     try {
         const res = await fetch('/app/balance');
         const data = await res.json();
+        renderBalances(data.balances);
         if (data.reconciled > 0) await Promise.all([loadSummary(), fetchQueue({ reset: true })]);
     } catch (e) { /* non-fatal: statuses just refresh on next load */ }
+}
+
+// One chip per funded rail — label, amount in that rail's own currency.
+function renderBalances(list) {
+    const el = document.getElementById('balances');
+    if (!el) return;
+    if (!list || !list.length) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden'); el.classList.add('flex');
+    el.innerHTML = '<span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Balance</span>' +
+        list.map(b => {
+            const amt = b.available == null ? '—' : money(b.available, b.currency);
+            const demo = b.demo ? '<span class="text-[10px] uppercase tracking-wide text-slate-400">demo</span>' : '';
+            return `<div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-sm">
+                <span class="text-sm font-semibold text-slate-900">${amt}</span>
+                <span class="text-[11px] text-slate-400">${b.currency} · ${b.provider}</span>${demo}
+            </div>`;
+        }).join('');
 }
 
 async function load() {

@@ -6,6 +6,7 @@ use App\Models\Invoice;
 use App\Services\Payables\PayablesOrchestrator;
 use App\Services\Payables\PayoutReconciler;
 use App\Services\Payouts\PayoutGatewayResolver;
+use App\Services\Payouts\RailCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
@@ -115,10 +116,12 @@ class DashboardController extends Controller
     /**
      * The slow, rail-backed bits — loaded asynchronously after the grid is
      * already on screen. Reconciles in-flight payouts (throttled to once per
-     * 20s per user) and returns the cached balance. `reconciled` tells the
-     * client whether any invoice statuses changed and the queue needs a refresh.
+     * 20s per user) and returns one balance PER usable rail (a business can
+     * fund several — a USD Dwolla balance, an NGN Paystack balance, …).
+     * `reconciled` tells the client whether invoice statuses changed and the
+     * queue needs a refresh.
      */
-    public function balance(Request $request, PayoutReconciler $reconciler, PayoutGatewayResolver $gateways)
+    public function balance(Request $request, PayoutReconciler $reconciler, PayoutGatewayResolver $gateways, RailCatalog $catalog)
     {
         $user = $request->user();
         $userId = $user->id;
@@ -129,12 +132,40 @@ class DashboardController extends Controller
             $reconciled = rescue(fn () => $reconciler->reconcile($user), 0, report: false);
         }
 
+        $balances = Cache::remember(
+            "payout_balances:{$userId}",
+            now()->addSeconds(60),
+            function () use ($user, $gateways, $catalog) {
+                $out = [];
+                foreach ($catalog->all() as $rail => $meta) {
+                    if (! $catalog->isUsable($rail)) {
+                        continue; // planned, or no platform creds
+                    }
+
+                    $bal = rescue(fn () => $gateways->gateway($rail, $user)->balance(), null, report: false);
+                    if ($bal === null || ($bal['state'] ?? null) !== 'ok') {
+                        continue; // rail not connected / unreadable for this business
+                    }
+
+                    $demo = $bal['demo'] ?? false;
+                    $out[] = [
+                        'rail' => $rail,
+                        'provider' => $meta['provider'],
+                        'method' => $meta['method'],
+                        // In demo/fake mode every rail reports the same stub figure;
+                        // label each in its own currency so the tiles read sensibly.
+                        'currency' => $demo ? $meta['currency'] : ($bal['currency'] ?? $meta['currency']),
+                        'available' => $bal['available'] ?? null,
+                        'demo' => $demo,
+                    ];
+                }
+
+                return $out;
+            },
+        );
+
         return response()->json([
-            'balance' => Cache::remember(
-                "payout_balance:{$userId}",
-                now()->addSeconds(60),
-                fn () => rescue(fn () => $gateways->for($user)->balance(), null, report: false),
-            ),
+            'balances' => $balances,
             'reconciled' => $reconciled,
         ]);
     }

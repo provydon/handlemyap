@@ -183,8 +183,8 @@ class PayablesOrchestrator
             },
         ]);
 
-        // Money just moved — drop the cached balance so the dashboard refetches.
-        Cache::forget("payout_balance:{$invoice->user_id}");
+        // Money just moved — drop the cached balances so the dashboard refetches.
+        Cache::forget("payout_balances:{$invoice->user_id}");
 
         return $payout->refresh();
     }
