@@ -7,6 +7,8 @@ use App\Services\Payouts\DwollaConnector;
 use App\Services\Payouts\PayoutGatewayResolver;
 use App\Services\Payouts\PaystackConnector;
 use App\Services\Payouts\RailCatalog;
+use App\Services\Payouts\StripeGlobalPayoutsConnector;
+use App\Services\Payouts\WiseConnector;
 use Illuminate\Http\Request;
 
 class VendorController extends Controller
@@ -43,9 +45,10 @@ class VendorController extends Controller
     }
 
     /**
-     * Attach a vendor's bank for the rail that serves their country. US vendors
-     * register a Dwolla funding source; Nigerian vendors a Paystack transfer
-     * recipient. Either way we keep only the provider's destination id.
+     * Attach a vendor's bank for the rail that serves their country (and, where a
+     * country has several, the one the business chose): a Dwolla funding source
+     * for the US, a Paystack recipient for Nigeria, a Wise or Stripe recipient
+     * for the UK. Either way we keep only the provider's destination id.
      */
     public function storeBank(Request $request, Vendor $vendor)
     {
@@ -56,6 +59,8 @@ class VendorController extends Controller
         return match ($rail) {
             'dwolla' => $this->storeDwolla($request, $vendor),
             'paystack' => $this->storePaystack($request, $vendor),
+            'wise' => $this->storeWise($request, $vendor),
+            'stripe' => $this->storeStripe($request, $vendor),
             default => $this->bail($request, 'No payout rail is available for this vendor’s country yet.'),
         };
     }
@@ -132,6 +137,80 @@ class VendorController extends Controller
         }
 
         return back()->with('status', "Bank added for {$vendor->name} — they can now be paid by Paystack transfer.");
+    }
+
+    /** UK bank details (sort code + account number) — shared by Wise and Stripe. */
+    private function ukBankDetails(Request $request): array
+    {
+        $data = $request->validate([
+            'sort_code' => 'required|string|max:10',
+            'account_number' => 'required|string|max:10',
+        ]);
+
+        return [
+            'sort_code' => preg_replace('/\D/', '', $data['sort_code']),
+            'account_number' => preg_replace('/\D/', '', $data['account_number']),
+        ];
+    }
+
+    private function storeWise(Request $request, Vendor $vendor)
+    {
+        $bank = $this->ukBankDetails($request);
+
+        $result = app(WiseConnector::class)->createRecipient(
+            $vendor->name, $bank['sort_code'], $bank['account_number'], $vendor->currency ?: 'GBP',
+        );
+
+        if (! $result['ok']) {
+            return $this->bail($request, $result['message'] ?? 'Could not add this bank with Wise.', 'account_number');
+        }
+
+        $vendor->payoutMethods()->updateOrCreate(
+            ['rail' => 'wise'],
+            [
+                'recipient_ref' => $result['recipient_code'],
+                'details' => ['sort_code' => $bank['sort_code'], 'account_last4' => substr($bank['account_number'], -4)],
+                'verified_at' => now(),
+            ],
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['connected' => true, 'vendor_id' => $vendor->id]);
+        }
+
+        return back()->with('status', "Bank added for {$vendor->name} — they can now be paid via Wise.");
+    }
+
+    private function storeStripe(Request $request, Vendor $vendor)
+    {
+        $bank = $this->ukBankDetails($request);
+
+        $result = app(StripeGlobalPayoutsConnector::class)->createRecipient(
+            $vendor->name, $bank['sort_code'], $bank['account_number'], $vendor->currency ?: 'GBP',
+        );
+
+        if (! $result['ok']) {
+            return $this->bail($request, $result['message'] ?? 'Could not add this bank with Stripe.', 'account_number');
+        }
+
+        $vendor->payoutMethods()->updateOrCreate(
+            ['rail' => 'stripe'],
+            [
+                'recipient_ref' => $result['recipient_code'],
+                'details' => [
+                    'payout_method' => $result['payout_method'],
+                    'sort_code' => $bank['sort_code'],
+                    'account_last4' => substr($bank['account_number'], -4),
+                ],
+                'verified_at' => now(),
+            ],
+        );
+
+        if ($request->expectsJson()) {
+            return response()->json(['connected' => true, 'vendor_id' => $vendor->id]);
+        }
+
+        return back()->with('status', "Bank added for {$vendor->name} — they can now be paid via Stripe Global Payouts.");
     }
 
     private function bail(Request $request, string $message, string $field = 'bank')

@@ -45,12 +45,18 @@ return [
             'country' => 'NG',
             'currency' => 'NGN',
         ],
+        // The UK can be paid two ways — the business picks in Settings.
         'wise' => [
             'provider' => 'Wise',
             'method' => 'Bank transfer',
             'country' => 'GB',
             'currency' => 'GBP',
-            'planned' => true, // no live gateway yet — pick Wise or Stripe Global Payouts
+        ],
+        'stripe' => [
+            'provider' => 'Stripe',
+            'method' => 'Global Payouts',
+            'country' => 'GB',
+            'currency' => 'GBP',
         ],
     ],
 
@@ -58,6 +64,22 @@ return [
         // Platform-level Paystack secret (one account for everyone). test vs
         // live is decided by the key prefix (sk_test_ / sk_live_), not a host.
         'secret' => env('PAYSTACK_SECRET'),
+    ],
+
+    'wise' => [
+        // Platform Wise account: a scoped API token + the business profile id
+        // money is sent from. Sandbox vs live is a host switch.
+        'token' => env('WISE_API_TOKEN'),
+        'profile_id' => env('WISE_PROFILE_ID'),
+        'env' => env('WISE_ENV', 'sandbox'), // sandbox | live
+    ],
+
+    'stripe' => [
+        // Stripe Global Payouts (OutboundPayments v2). A restricted key, the
+        // financial account money is sent from, and the pinned preview version.
+        'secret' => env('STRIPE_SECRET'),
+        'financial_account' => env('STRIPE_FINANCIAL_ACCOUNT'),
+        'version' => env('STRIPE_GLOBAL_PAYOUTS_VERSION', '2026-09-30.preview'),
     ],
 
     'dwolla' => [

@@ -37,6 +37,19 @@ class PayoutRoutingTest extends TestCase
         $this->assertSame('paystack', $this->resolver()->railFor($user, $vendor));
     }
 
+    public function test_uk_vendor_defaults_to_wise_and_business_can_switch_to_stripe(): void
+    {
+        $vendorData = ['name' => 'London Ltd', 'email' => 'l@l.uk', 'country' => 'GB', 'currency' => 'GBP'];
+
+        // No choice → the first available UK rail (Wise).
+        $user = User::factory()->create();
+        $this->assertSame('wise', $this->resolver()->railFor($user, $user->vendors()->create($vendorData)));
+
+        // The business picks Stripe Global Payouts for the UK.
+        $picker = User::factory()->create(['payout_routes' => ['GB' => 'stripe']]);
+        $this->assertSame('stripe', $this->resolver()->railFor($picker, $picker->vendors()->create($vendorData)));
+    }
+
     public function test_business_choice_wins_when_a_country_has_several_rails(): void
     {
         // Give Nigeria a second rail just for this test.

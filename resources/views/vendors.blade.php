@@ -66,6 +66,19 @@
                             </div>
                             <button class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-1.5 text-sm font-medium">Save bank</button>
                         </div>
+                    @elseif (in_array($r['rail'], ['wise', 'stripe']))
+                        {{-- UK · Wise or Stripe Global Payouts: sort code + account number --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                            <div class="sm:col-span-1">
+                                <label class="block text-[11px] text-slate-500 mb-1">Sort code</label>
+                                <input name="sort_code" required inputmode="numeric" placeholder="40-30-20" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[11px] text-slate-500 mb-1">Account number</label>
+                                <input name="account_number" required inputmode="numeric" placeholder="12345678" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm">
+                            </div>
+                            <button class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-1.5 text-sm font-medium">Save bank</button>
+                        </div>
                     @else
                         {{-- US · ACH via Dwolla: routing + account + type --}}
                         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">

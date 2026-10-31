@@ -22,12 +22,17 @@ class PayoutBalanceTest extends TestCase
 
         $res = $this->actingAs($user)->getJson('/app/balance')->assertOk();
 
-        // Dwolla (US/USD) and Paystack (NG/NGN) are usable; Wise is planned → skipped.
-        $res->assertJsonCount(2, 'balances')
+        // One per usable rail, each in its own currency: Dwolla (USD), Paystack
+        // (NGN), Wise (GBP), Stripe (GBP).
+        $res->assertJsonCount(4, 'balances')
             ->assertJsonPath('balances.0.provider', 'Dwolla')
             ->assertJsonPath('balances.0.currency', 'USD')
             ->assertJsonPath('balances.0.demo', true)
             ->assertJsonPath('balances.1.provider', 'Paystack')
-            ->assertJsonPath('balances.1.currency', 'NGN');
+            ->assertJsonPath('balances.1.currency', 'NGN')
+            ->assertJsonPath('balances.2.provider', 'Wise')
+            ->assertJsonPath('balances.2.currency', 'GBP')
+            ->assertJsonPath('balances.3.provider', 'Stripe')
+            ->assertJsonPath('balances.3.currency', 'GBP');
     }
 }

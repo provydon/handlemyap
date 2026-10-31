@@ -11,6 +11,8 @@ use App\Services\Payouts\FakePayoutGateway;
 use App\Services\Payouts\PayoutGateway;
 use App\Services\Payouts\PaystackConnector;
 use App\Services\Payouts\PlaidConnector;
+use App\Services\Payouts\StripeGlobalPayoutsConnector;
+use App\Services\Payouts\WiseConnector;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -55,6 +57,17 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(PaystackConnector::class, fn ($app) => new PaystackConnector(
             (string) ($app['config']['handlemyap.paystack.secret'] ?? ''),
+        ));
+
+        $this->app->bind(WiseConnector::class, fn ($app) => new WiseConnector(
+            (string) ($app['config']['handlemyap.wise.token'] ?? ''),
+            (string) ($app['config']['handlemyap.wise.profile_id'] ?? ''),
+            (string) ($app['config']['handlemyap.wise.env'] ?? 'sandbox'),
+        ));
+
+        $this->app->bind(StripeGlobalPayoutsConnector::class, fn ($app) => new StripeGlobalPayoutsConnector(
+            (string) ($app['config']['handlemyap.stripe.secret'] ?? ''),
+            (string) ($app['config']['handlemyap.stripe.version'] ?? '2026-09-30.preview'),
         ));
     }
 

@@ -88,6 +88,8 @@ class PayoutGatewayResolver
         return match ($rail) {
             'dwolla' => $this->dwolla($user),
             'paystack' => $this->paystack(),
+            'wise' => $this->wise(),
+            'stripe' => $this->stripe(),
             default => new UnconnectedPayoutGateway("No live payout rail for '{$rail}'."),
         };
     }
@@ -144,5 +146,23 @@ class PayoutGatewayResolver
         return filled($secret)
             ? new PaystackGateway($secret)
             : new UnconnectedPayoutGateway('Paystack is not configured for Nigerian payouts.');
+    }
+
+    private function wise(): PayoutGateway
+    {
+        $cfg = config('handlemyap.wise');
+
+        return filled($cfg['token'] ?? null) && filled($cfg['profile_id'] ?? null)
+            ? new WiseGateway($cfg['token'], (string) $cfg['profile_id'], $cfg['env'] ?? 'sandbox')
+            : new UnconnectedPayoutGateway('Wise is not configured for UK payouts.');
+    }
+
+    private function stripe(): PayoutGateway
+    {
+        $cfg = config('handlemyap.stripe');
+
+        return filled($cfg['secret'] ?? null)
+            ? new StripeGlobalPayoutsGateway($cfg['secret'], $cfg['financial_account'] ?? null, $cfg['version'] ?? '2026-09-30.preview')
+            : new UnconnectedPayoutGateway('Stripe Global Payouts is not configured for UK payouts.');
     }
 }

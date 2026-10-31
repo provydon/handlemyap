@@ -83,6 +83,8 @@ class RailCatalog
         return match ($rail) {
             'dwolla' => filled(config('handlemyap.dwolla.key')) && filled(config('handlemyap.dwolla.secret')),
             'paystack' => filled(config('handlemyap.paystack.secret')),
+            'wise' => filled(config('handlemyap.wise.token')) && filled(config('handlemyap.wise.profile_id')),
+            'stripe' => filled(config('handlemyap.stripe.secret')),
             default => false,
         };
     }
