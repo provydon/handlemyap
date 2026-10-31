@@ -3,8 +3,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
-    // HandlemyAP brand — a PayPal-adjacent blue→navy palette and a geometric
-    // sans close in feel to PayPal's own type. Our own identity, not a clone.
+    // HandlemyAP brand — a blue→navy palette and a geometric sans. Our own identity.
     tailwind.config = {
         theme: {
             extend: {

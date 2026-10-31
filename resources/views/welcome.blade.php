@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>HandlemyAP — AI accounts payable, paid via PayPal</title>
-    <meta name="description" content="Share one link, your vendors send their invoices into your queue, and HandlemyAP reads each one with AI, pays via PayPal under your rules, and flags irregularities — duplicates, overcharges, unfamiliar vendors — for you to approve.">
+    <title>HandlemyAP — AI accounts payable, paid by bank transfer (ACH)</title>
+    <meta name="description" content="Share one link, your vendors send their invoices into your queue, and HandlemyAP reads each one with AI, pays by ACH under your rules, and flags irregularities — duplicates, overcharges, unfamiliar vendors — for you to approve.">
     @include('partials.head')
 </head>
 <body class="bg-white text-slate-800 antialiased">
@@ -34,14 +34,14 @@
     <div class="absolute inset-0 bg-gradient-to-b from-brand-50 to-white -z-10"></div>
     <div class="max-w-6xl mx-auto px-5 pt-16 pb-20 text-center">
         <span class="inline-flex items-center gap-2 rounded-full bg-brand-100 text-brand-700 text-xs font-medium px-3 py-1 mb-6">
-            🟦 Built for the PayPal AI Hackathon
+            🟦 AI-native accounts payable
         </span>
         <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
             Your vendors send the invoices. <span class="text-brand-600">AI helps you pay them.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
             Share one link. Vendors send their invoices straight into your queue — any format.
-            HandlemyAP reads each one with AI, pays via <strong>PayPal</strong> under your rules, and
+            HandlemyAP reads each one with AI, pays by <strong>bank transfer (ACH)</strong> under your rules, and
             flags anything off — duplicates, overcharges, unfamiliar vendors — for you to approve.
         </p>
         <div class="mt-6 inline-flex items-center gap-2 text-sm">
@@ -69,7 +69,7 @@
             ['1', 'Share your link', 'Vendors submit invoices to your intake link — no login. Or forward uploads, API and MCP.'],
             ['2', 'AI reads them', 'Vendor, amount, due date, line items — normalised, with a confidence score. Any layout.'],
             ['3', 'Rules decide', 'Auto-approve within your limits, or park it in the review queue.'],
-            ['4', 'PayPal pays', 'A PayPal Payout goes to the vendor by email. Scheduled for the due date.'],
+            ['4', 'Bank pays', 'An ACH transfer goes to the vendor. Scheduled for the due date.'],
         ] as [$n, $t, $d])
         <div class="bg-white rounded-2xl border border-slate-200 p-5">
             <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-semibold text-sm">{{ $n }}</div>
@@ -89,7 +89,7 @@
                 ['Reads any invoice', 'PDFs, scans, photos, odd layouts — the AI handles heterogeneous documents a template never could.'],
                 ['Flags what looks off', 'Duplicate bills, amounts over your limit, unfamiliar vendors — parked in one clean queue with the exact reason it needs your eyes.'],
                 ['An autonomy dial', 'You set the rules: pay under $X automatically, known vendors only, cap the daily spend. Everything else waits for a tap.'],
-                ['Pays anyone', 'PayPal Payouts reach vendors by email — they don’t need an existing PayPal setup to get paid.'],
+                ['Pays your vendors', 'Approved invoices settle by ACH to each vendor — on your rails, under your rules.'],
                 ['API & MCP first', 'Every action is an API call and an MCP tool, so other apps embed HandlemyAP as their payout engine.'],
             ] as [$t, $d])
             <div class="bg-white rounded-2xl border border-slate-200 p-5">
@@ -108,7 +108,7 @@
             <h2 class="text-2xl font-bold text-slate-900">Embed it in your app</h2>
             <p class="mt-3 text-slate-600">
                 Building a marketplace or platform that pays contractors? Don’t rebuild AP.
-                Submit a payable to HandlemyAP and it handles extraction, rules, approval and the PayPal payout —
+                Submit a payable to HandlemyAP and it handles extraction, rules, approval and the ACH payout —
                 then calls you back. A notary-signing platform paying notaries, for example, plugs in as a payout rail.
             </p>
             <ul class="mt-4 space-y-2 text-sm text-slate-600">
@@ -120,7 +120,7 @@
             <a href="/docs" class="inline-flex items-center mt-5 text-brand-600 font-medium hover:text-brand-700">Read the API &amp; MCP docs →</a>
         </div>
         <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
-<pre class="whitespace-pre"><span class="text-slate-400"># Submit a payable — AI extracts, rules decide, PayPal pays</span>
+<pre class="whitespace-pre"><span class="text-slate-400"># Submit a payable — AI extracts, rules decide, ACH pays</span>
 curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
   -d vendor_name=<span class="text-amber-200">"Jane Q Notary"</span> \
@@ -131,24 +131,24 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
     </div>
 </section>
 
-{{-- Why HandlemyAP + PayPal --}}
+{{-- Why HandlemyAP --}}
 <section class="bg-brand-900 text-white">
     <div class="max-w-6xl mx-auto px-5 py-16">
         <div class="max-w-2xl">
             <span class="inline-flex items-center gap-2 rounded-full bg-white/10 text-brand-200 text-xs font-medium px-3 py-1 mb-4">
-                Why this, and why PayPal
+                Why this
             </span>
-            <h2 class="text-2xl sm:text-3xl font-bold">A payables layer that turns bills into PayPal volume.</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold">A payables layer that turns bills into automated payouts.</h2>
             <p class="mt-3 text-slate-300">
                 Most payment AI is about checkout — money <em>in</em>. HandlemyAP is the other side: money
                 <em>out</em>. It’s accounts payable packaged as a service other apps absorb, and every
-                invoice it clears settles on PayPal Payouts.
+                invoice it clears settles by ACH.
             </p>
         </div>
         <div class="grid md:grid-cols-3 gap-5 mt-10">
             @foreach ([
-                ['PayPal is the rail — by design', 'Approval rules exist to gate a PayPal payout. Remove the rail and there’s no product. Payouts reach any vendor by email — no existing PayPal setup required.'],
-                ['A volume multiplier, not one app', 'Because it’s embeddable over API and MCP, every app that plugs in (a notary-signing platform, a marketplace) routes its payouts through PayPal too. One integration, many apps’ volume.'],
+                ['A real rail — by design', 'Approval rules exist to gate a real payout. Remove the rail and there’s no product. Payouts settle by ACH, on rails you control.'],
+                ['A volume multiplier, not one app', 'Because it’s embeddable over API and MCP, every app that plugs in (a notary-signing platform, a marketplace) routes its payouts through it too. One integration, many apps’ volume.'],
                 ['Responsible agentic payments', 'AI only reads the invoice — genuinely semantic work. A deterministic rule engine decides what pays, with a human in the loop for the rest. An agent can act, never run off with the money.'],
             ] as [$t, $d])
             <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
@@ -164,14 +164,14 @@ curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
 <section class="bg-brand-600">
     <div class="max-w-6xl mx-auto px-5 py-14 text-center">
         <h2 class="text-2xl font-bold text-white">Put your payables on autopilot</h2>
-        <p class="text-brand-100 mt-2">Create an account, share your link, and let the invoices pay themselves via PayPal.</p>
+        <p class="text-brand-100 mt-2">Create an account, share your link, and let the invoices pay themselves by ACH.</p>
         <a href="/register" class="inline-block mt-6 bg-white text-brand-700 hover:bg-brand-50 rounded-full px-6 py-3 font-medium">Get your link →</a>
     </div>
 </section>
 
 <footer class="border-t border-slate-100">
     <div class="max-w-6xl mx-auto px-5 py-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-400 gap-2">
-        <div>Handlemy<span class="text-brand-600">AP</span> — AI accounts payable → PayPal</div>
+        <div>Handlemy<span class="text-brand-600">AP</span> — AI accounts payable</div>
         <div class="flex gap-4">
             <a href="/docs" class="hover:text-slate-600">Docs</a>
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>

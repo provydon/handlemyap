@@ -4,51 +4,138 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Services\Payables\PayablesOrchestrator;
+use App\Services\Payables\PayoutReconciler;
+use App\Services\Payouts\PayoutGatewayResolver;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('dashboard');
+        $user = $request->user();
+
+        // Mint a short-lived token so the dashboard can call the public REST API
+        // (/api/v1) just like any external integrator — the UI dogfoods its own
+        // API. Keep exactly one such token per user so they don't pile up.
+        $user->tokens()->where('name', 'dashboard')->delete();
+        $apiToken = $user->createToken('dashboard')->plainTextToken;
+
+        return view('dashboard', ['apiToken' => $apiToken]);
     }
 
-    /** JSON feed for the AG Grid queue + the headline stats. */
-    public function data(Request $request, \App\Services\Payables\PayoutReconciler $reconciler, \App\Services\PayPal\PayoutGateway $gateway)
+    /**
+     * Dashboard summary — the headline metrics as a single grouped aggregate
+     * (COUNT + SUM per status) computed in the database, so it stays cheap no
+     * matter how many invoices exist (never loads rows into PHP to count them).
+     * Also returns the distinct currencies in use, to fill the currency filter.
+     */
+    public function summary(Request $request)
     {
-        // Best-effort: advance any in-flight PayPal payouts before rendering, so
-        // the queue reflects real settlement without needing a background worker.
-        rescue(fn () => $reconciler->reconcile($request->user()), report: false);
+        $rows = $request->user()->invoices()
+            ->selectRaw('status, COUNT(*) as cnt, COALESCE(SUM(amount), 0) as total')
+            ->groupBy('status')
+            ->get()
+            ->keyBy('status');
 
-        $invoices = $request->user()->invoices()
-            ->with('vendor')->latest()->limit(300)->get()
-            ->map(fn (Invoice $i) => [
-                'id' => $i->id,
-                'vendor' => $i->vendor?->name ?? $i->vendor_name,
-                'email' => $i->vendor?->email,
-                'invoice_number' => $i->invoice_number,
-                'amount' => $i->amount !== null ? (float) $i->amount : null,
-                'currency' => $i->currency,
-                'due_date' => $i->due_date?->toDateString(),
-                'status' => $i->status,
-                'confidence' => $i->confidence,
-                'reasons' => $i->review_reasons ? implode(' · ', $i->review_reasons) : null,
-                'source' => $i->source,
-                'file_url' => $i->file_path ? url("/app/invoices/{$i->id}/file") : null,
-            ]);
+        $count = fn (string $s) => (int) ($rows[$s]->cnt ?? 0);
+        $sum = fn (string $s) => round((float) ($rows[$s]->total ?? 0), 2);
 
         return response()->json([
-            'invoices' => $invoices,
             'stats' => [
-                'needs_review' => $invoices->where('status', Invoice::STATUS_NEEDS_REVIEW)->count(),
-                'needs_review_amount' => round($invoices->where('status', Invoice::STATUS_NEEDS_REVIEW)->sum('amount'), 2),
-                'scheduled' => $invoices->where('status', Invoice::STATUS_SCHEDULED)->count(),
-                'scheduled_amount' => round($invoices->where('status', Invoice::STATUS_SCHEDULED)->sum('amount'), 2),
-                'paid' => $invoices->where('status', Invoice::STATUS_PAID)->count(),
-                'paid_amount' => round($invoices->where('status', Invoice::STATUS_PAID)->sum('amount'), 2),
+                'needs_review' => $count(Invoice::STATUS_NEEDS_REVIEW),
+                'needs_review_amount' => $sum(Invoice::STATUS_NEEDS_REVIEW),
+                'scheduled' => $count(Invoice::STATUS_SCHEDULED),
+                'scheduled_amount' => $sum(Invoice::STATUS_SCHEDULED),
+                'paid' => $count(Invoice::STATUS_PAID),
+                'paid_amount' => $sum(Invoice::STATUS_PAID),
             ],
-            'paypal_balance' => rescue(fn () => $gateway->balance(), null, report: false),
+            'currencies' => $request->user()->invoices()
+                ->whereNotNull('currency')->distinct()->orderBy('currency')->pluck('currency'),
+        ]);
+    }
+
+    /**
+     * The invoice queue — filtered and paginated in the database, so the client
+     * only ever holds one page instead of the whole table. Vendor is
+     * eager-loaded (no N+1).
+     */
+    public function queue(Request $request)
+    {
+        $query = $request->user()->invoices()->with('vendor')->latest();
+
+        if ($status = $request->string('status')->toString()) {
+            $query->where('status', $status);
+        }
+        if ($source = $request->string('source')->toString()) {
+            $query->where('source', $source);
+        }
+        if ($currency = $request->string('currency')->toString()) {
+            $query->where('currency', $currency);
+        }
+        if ($term = trim($request->string('search')->toString())) {
+            $like = '%'.$term.'%';
+            $query->where(function ($w) use ($like) {
+                $w->where('vendor_name', 'like', $like)
+                    ->orWhere('invoice_number', 'like', $like)
+                    ->orWhereHas('vendor', fn ($v) => $v
+                        ->where('name', 'like', $like)->orWhere('email', 'like', $like));
+            });
+        }
+
+        $page = $query->paginate(50);
+
+        return response()->json([
+            'invoices' => collect($page->items())->map(fn (Invoice $i) => $this->present($i)),
+            'has_more' => $page->hasMorePages(),
+            'next_page' => $page->currentPage() + 1,
+        ]);
+    }
+
+    /** Shape an invoice row for the dashboard queue. @return array<string, mixed> */
+    private function present(Invoice $i): array
+    {
+        return [
+            'id' => $i->id,
+            'vendor' => $i->vendor?->name ?? $i->vendor_name,
+            'email' => $i->vendor?->email,
+            'invoice_number' => $i->invoice_number,
+            'amount' => $i->amount !== null ? (float) $i->amount : null,
+            'currency' => $i->currency,
+            'due_date' => $i->due_date?->toDateString(),
+            'status' => $i->status,
+            'confidence' => $i->confidence,
+            'reasons' => $i->review_reasons ? implode(' · ', $i->review_reasons) : null,
+            'source' => $i->source,
+            'file_url' => $i->file_path ? url("/app/invoices/{$i->id}/file") : null,
+        ];
+    }
+
+    /**
+     * The slow, rail-backed bits — loaded asynchronously after the grid is
+     * already on screen. Reconciles in-flight payouts (throttled to once per
+     * 20s per user) and returns the cached balance. `reconciled` tells the
+     * client whether any invoice statuses changed and the queue needs a refresh.
+     */
+    public function balance(Request $request, PayoutReconciler $reconciler, PayoutGatewayResolver $gateways)
+    {
+        $user = $request->user();
+        $userId = $user->id;
+
+        $reconciled = 0;
+        // Cache::add is atomic: reconcile runs only when the 20s lock is free.
+        if (Cache::add("reconcile:lock:{$userId}", true, now()->addSeconds(20))) {
+            $reconciled = rescue(fn () => $reconciler->reconcile($user), 0, report: false);
+        }
+
+        return response()->json([
+            'balance' => Cache::remember(
+                "payout_balance:{$userId}",
+                now()->addSeconds(60),
+                fn () => rescue(fn () => $gateways->for($user)->balance(), null, report: false),
+            ),
+            'reconciled' => $reconciled,
         ]);
     }
 

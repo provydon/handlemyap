@@ -49,9 +49,12 @@ class StubExtractor implements InvoiceExtractor
             ->map(fn ($k) => $data[$k] ?? null)
             ->first(fn ($v) => $v !== null);
 
+        $paypal = $get(['paypal_email', 'paypal']);
+
         return array_filter([
             'vendor_name' => $get(['vendor_name', 'vendor', 'from', 'biller']),
-            'vendor_email' => $get(['vendor_email', 'email', 'pay_to_email']),
+            // Payouts go to a PayPal email, so prefer it as the payout address.
+            'vendor_email' => $paypal ?: $get(['vendor_email', 'email', 'pay_to_email']),
             'invoice_number' => $get(['invoice_number', 'invoice_no', 'number', 'invoice']),
             'amount' => ($a = $get(['amount', 'total', 'amount_due', 'grand_total'])) !== null ? (float) $a : null,
             'currency' => $get(['currency', 'ccy']),
@@ -59,6 +62,10 @@ class StubExtractor implements InvoiceExtractor
             'due_date' => $get(['due_date', 'due', 'payable_by']),
             'po_ref' => $get(['po_ref', 'po', 'purchase_order']),
             'line_items' => is_array($data['line_items'] ?? null) ? $data['line_items'] : null,
+            'payment' => is_array($data['payment'] ?? null)
+                ? $data['payment']
+                : ($paypal ? ['method' => 'paypal', 'paypal_email' => $paypal] : null),
+            'notes' => $get(['notes', 'memo']),
         ], fn ($v) => $v !== null);
     }
 

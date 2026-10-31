@@ -26,4 +26,11 @@ php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
 
+# Background queue worker for AI extraction jobs. Auto-restarts if it exits so
+# the queue keeps draining in this single-container deploy.
+( while true; do
+    php artisan queue:work --sleep=3 --tries=3 --max-time=3600 || true
+    sleep 2
+  done ) &
+
 exec apache2-foreground

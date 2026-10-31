@@ -18,7 +18,7 @@ class Payout extends Model
 
     protected $fillable = [
         'user_id', 'invoice_id', 'vendor_id', 'amount', 'currency', 'status',
-        'paypal_batch_id', 'paypal_item_id', 'paypal_status',
+        'provider_ref', 'provider_item_ref', 'provider_status',
         'scheduled_for', 'paid_at', 'failure_reason',
     ];
 

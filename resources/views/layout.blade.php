@@ -14,10 +14,11 @@
         <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <a href="/" class="font-semibold text-slate-900">Handlemy<span class="text-brand-600">AP</span></a>
-                <span class="text-xs text-slate-400 hidden sm:inline">AI accounts payable → PayPal</span>
+                <span class="text-xs text-slate-400 hidden sm:inline">AI accounts payable</span>
             </div>
             <div class="flex items-center gap-4 text-sm">
                 <a href="/app" class="text-slate-600 hover:text-slate-900">Dashboard</a>
+                <a href="/app/vendors" class="text-slate-600 hover:text-slate-900">Vendors</a>
                 <a href="/settings" class="text-slate-600 hover:text-slate-900">Settings</a>
                 <form method="POST" action="/logout">@csrf
                     <button class="text-slate-500 hover:text-slate-900">Sign out</button>

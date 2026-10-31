@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ExtractInvoice;
 use App\Services\Payables\PayablesOrchestrator;
 use Illuminate\Http\Request;
 
@@ -30,14 +31,30 @@ class InvoiceController extends Controller
      */
     public function store(Request $request, PayablesOrchestrator $orchestrator)
     {
+        // Where the payable came from. Defaults to 'api'; the dashboard, which
+        // dogfoods this same endpoint, labels its own uploads/manual entries.
+        $source = in_array($request->input('source'), ['intake', 'upload', 'api', 'mcp', 'manual'], true)
+            ? $request->input('source')
+            : 'api';
+
         if ($request->hasFile('file')) {
             $request->validate(['file' => 'required|file|max:10240']);
 
-            $invoice = $orchestrator->ingestUpload($request->user(), $request->file('file'), [
-                'source' => 'api',
+            $meta = [
+                'source' => $source,
                 'external_ref' => $request->input('external_ref'),
                 'metadata' => $request->input('metadata'),
-            ]);
+            ];
+
+            // `defer` stores the file now, returns straight away (status
+            // "extracting"), and queues the AI read as a background job — this
+            // is how the dashboard gives an instant upload confirmation.
+            if ($request->boolean('defer')) {
+                $invoice = $orchestrator->receiveUpload($request->user(), $request->file('file'), $meta);
+                ExtractInvoice::dispatch($invoice->id);
+            } else {
+                $invoice = $orchestrator->ingestUpload($request->user(), $request->file('file'), $meta);
+            }
         } else {
             $data = $request->validate([
                 'vendor_name' => 'nullable|string|max:255',
@@ -52,12 +69,21 @@ class InvoiceController extends Controller
                 'external_ref' => 'nullable|string|max:255',
                 'metadata' => 'nullable|array',
             ]);
-            $data['source'] = 'api';
+            $data['source'] = $source;
 
             $invoice = $orchestrator->ingestData($request->user(), $data);
         }
 
         return response()->json($invoice->load('vendor'), 201);
+    }
+
+    /** Phase 2 of a deferred upload: read the stored document and route it. */
+    public function extract(Request $request, string $invoice, PayablesOrchestrator $orchestrator)
+    {
+        $model = $request->user()->invoices()->findOrFail($invoice);
+        $orchestrator->processExtraction($model);
+
+        return response()->json($model->refresh()->load('vendor'));
     }
 
     public function approve(Request $request, string $invoice, PayablesOrchestrator $orchestrator)

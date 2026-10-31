@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ExtractInvoice;
 use App\Models\User;
 use App\Services\Payables\PayablesOrchestrator;
 use Illuminate\Http\Request;
@@ -30,7 +31,10 @@ class IntakeController extends Controller
         if ($request->hasFile('file')) {
             $request->validate(['file' => 'required|file|max:10240']);
 
-            $orchestrator->ingestUpload($owner, $request->file('file'), ['source' => 'intake']);
+            // Store it now so the vendor gets an instant confirmation; the AI
+            // reads it in the background.
+            $invoice = $orchestrator->receiveUpload($owner, $request->file('file'), ['source' => 'intake']);
+            ExtractInvoice::dispatch($invoice->id);
 
             return back()->with('sent', $owner->name);
         }

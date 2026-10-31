@@ -8,6 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Pay scheduled invoices when due, and keep payout statuses in sync with PayPal.
+// Pay scheduled invoices when due, and keep payout statuses in sync with the rail.
 Schedule::command('handlemyap:run-due')->hourly();
 Schedule::command('handlemyap:sync-payouts')->everyFiveMinutes();

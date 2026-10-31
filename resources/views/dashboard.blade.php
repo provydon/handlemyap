@@ -2,30 +2,47 @@
 @section('title', 'Dashboard')
 @section('content')
 
-<div class="mb-5">
-    <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
-    <p class="text-sm text-slate-500">Vendors send invoices to your link — HandlemyAP reads each one, pays via PayPal under your rules, and flags anything off for you to review.</p>
-</div>
+@php($me = auth()->user())
+@php($intake = url('/u/'.$me->handle))
 
-{{-- Intake link — the main way invoices arrive --}}
-@php($intake = url('/u/'.auth()->user()->handle))
-<div class="bg-brand-600 rounded-2xl p-5 mb-6 text-white">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-            <div class="font-medium">Your invoice intake link</div>
-            <p class="text-sm text-brand-100 mt-0.5">Share it with your vendors — their invoices land straight in the queue below. No more digging through email or WhatsApp.</p>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
+{{-- Header: title on the left, a compact intake-link widget on the right
+     (no longer a full-width banner, but still front-and-centre). --}}
+<div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+        <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
+        <p class="text-sm text-slate-500 max-w-xl">Vendors send invoices to your link — HandlemyAP reads each one, pays by bank transfer (ACH) under your rules, and flags anything off for you to review.</p>
+    </div>
+    <div class="shrink-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
+        <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Your invoice intake link</div>
+        <div class="flex items-center gap-2">
             <input id="intake-url" readonly aria-label="Your intake link" value="{{ $intake }}"
-                   class="rounded-lg bg-white/10 border border-white/20 px-3 py-2 text-sm text-white w-56 max-w-full">
-            <button onclick="copyIntake(this)" class="rounded-full bg-white text-brand-700 px-4 py-2 text-sm font-medium hover:bg-brand-50">Copy</button>
-            <a href="{{ $intake }}" target="_blank" class="rounded-full border border-white/30 px-4 py-2 text-sm hover:bg-white/10">Open</a>
+                   class="w-48 sm:w-60 max-w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-600">
+            <button onclick="copyIntake(this)" class="rounded-full bg-brand-600 text-white px-3.5 py-1.5 text-xs font-medium hover:bg-brand-700">Copy</button>
+            <a href="{{ $intake }}" target="_blank" class="rounded-full border border-slate-300 px-3.5 py-1.5 text-xs text-slate-700 hover:bg-slate-50">Open</a>
         </div>
     </div>
 </div>
 
+{{-- Connect a bank — shown until the business links an ACH funding source --}}
+@unless ($me->dwollaConnected())
+<div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-start gap-3">
+            <div class="h-11 w-11 rounded-xl bg-amber-400 text-white flex items-center justify-center shrink-0">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9v3"/></svg>
+            </div>
+            <div>
+                <div class="font-medium text-amber-900">Connect a bank to start paying</div>
+                <p class="text-sm text-amber-800/90 mt-0.5">Invoices are paid by ACH from your own bank. Until you connect it, approved invoices just wait in review.</p>
+            </div>
+        </div>
+        <a href="{{ url('/settings') }}?tab=bank" class="shrink-0 rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 text-sm font-medium text-center shadow-sm">Connect bank</a>
+    </div>
+</div>
+@endunless
+
 {{-- Metrics --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     {{-- Needs review --}}
     <div onclick="filterStatus('needs_review')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
         <div class="text-sm font-bold text-slate-700">Needs review</div>
@@ -65,22 +82,6 @@
             </div>
         </div>
     </div>
-    {{-- PayPal balance --}}
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 transition hover:shadow-md">
-        <div class="flex items-center justify-between">
-            <div class="text-sm font-bold text-slate-700">PayPal balance</div>
-            <span class="text-[10px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 rounded px-1.5 py-0.5">PayPal</span>
-        </div>
-        <div class="flex items-center mt-3">
-            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-brand-600 shrink-0">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9v3"/></svg>
-            </div>
-            <div class="ml-3 min-w-0">
-                <div class="text-4xl font-semibold leading-none text-slate-900 truncate" data-stat="paypal_balance">—</div>
-                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="paypal_balance"></div>
-            </div>
-        </div>
-    </div>
 </div>
 
 {{-- Add one yourself — secondary, for the odd invoice that didn't come through your link --}}
@@ -89,27 +90,32 @@
         + Add one yourself (got an invoice another way? upload or type it in)
     </summary>
     <div class="grid md:grid-cols-2 gap-4 mt-3">
-        <form method="POST" action="/app/invoices" enctype="multipart/form-data"
+        <form id="form-upload" data-source="upload" data-defer="1" method="POST" action="/api/v1/invoices" enctype="multipart/form-data"
               class="bg-white rounded-2xl border border-slate-200 p-4">
-            @csrf
             <div class="font-medium text-slate-800 mb-2">Upload an invoice</div>
             <p class="text-xs text-slate-500 mb-3">PDF, image, or .txt/.json — any layout. The AI reads it.</p>
             <input id="upload-file" type="file" name="file" required aria-label="Invoice file"
                    class="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-brand-700">
-            <button class="mt-3 bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 text-sm font-medium">Read & queue</button>
+            <div class="flex items-center gap-3 mt-3">
+                <button class="bg-brand-600 hover:bg-brand-700 text-white rounded-full px-4 py-2 text-sm font-medium disabled:opacity-60">Read &amp; queue</button>
+                <span data-feedback class="text-xs text-slate-500"></span>
+            </div>
         </form>
 
-        <form method="POST" action="/app/invoices" class="bg-white rounded-2xl border border-slate-200 p-4">
-            @csrf
+        <form id="form-manual" data-source="manual" method="POST" action="/api/v1/invoices"
+              class="bg-white rounded-2xl border border-slate-200 p-4">
             <div class="font-medium text-slate-800 mb-2">Quick add</div>
             <div class="grid grid-cols-2 gap-2">
                 <input id="qa-vendor_name" name="vendor_name" placeholder="Vendor" required aria-label="Vendor" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 <input id="qa-vendor_email" name="vendor_email" type="email" placeholder="Payout email" aria-label="Payout email" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 <input id="qa-amount" name="amount" type="number" step="0.01" placeholder="Amount" required aria-label="Amount" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <input id="qa-currency" name="currency" value="USD" maxlength="3" aria-label="Currency" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
+                <input id="qa-currency" name="currency" value="{{ auth()->user()->default_currency ?? 'USD' }}" maxlength="3" aria-label="Currency" class="rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase">
                 <input id="qa-due_date" name="due_date" type="date" aria-label="Due date" class="col-span-2 rounded-lg border border-slate-300 px-3 py-2 text-sm">
             </div>
-            <button class="mt-3 bg-slate-800 hover:bg-slate-900 text-white rounded-full px-4 py-2 text-sm font-medium">Add</button>
+            <div class="flex items-center gap-3 mt-3">
+                <button class="bg-slate-800 hover:bg-slate-900 text-white rounded-full px-4 py-2 text-sm font-medium disabled:opacity-60">Add</button>
+                <span data-feedback class="text-xs text-slate-500"></span>
+            </div>
         </form>
     </div>
 </details>
@@ -124,7 +130,10 @@
                 <input id="f-search" type="search" placeholder="Search vendor or invoice #" aria-label="Search invoices"
                        class="w-full sm:w-64 bg-transparent border-0 border-b border-slate-200 pl-8 py-2 text-sm focus:outline-none focus:border-brand-500">
             </div>
-            <select id="f-status" aria-label="Filter by status" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
+            <select id="f-currency" aria-label="Filter by currency" class="hma-select rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
+                <option value="">All currencies</option>
+            </select>
+            <select id="f-status" aria-label="Filter by status" class="hma-select rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
                 <option value="">All statuses</option>
                 <option value="needs_review">Needs review</option>
                 <option value="scheduled">Scheduled</option>
@@ -134,7 +143,7 @@
                 <option value="rejected">Rejected</option>
                 <option value="failed">Failed</option>
             </select>
-            <select id="f-source" aria-label="Filter by source" class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
+            <select id="f-source" aria-label="Filter by source" class="hma-select rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
                 <option value="">All sources</option>
                 <option value="intake">Intake link</option>
                 <option value="upload">Upload</option>
@@ -147,8 +156,24 @@
     <div id="grid" class="ag-theme-quartz" style="height: 460px; width: 100%;"></div>
     <div id="fallback" class="hidden overflow-x-auto"></div>
     <div id="empty" class="hidden text-center text-slate-400 py-10 text-sm">No invoices yet — share your intake link above and they’ll show up here.</div>
+    <div class="mt-3 text-center">
+        <button id="load-more" onclick="fetchQueue({ reset: false })"
+                class="hidden rounded-full border border-slate-300 px-5 py-2 text-sm text-slate-700 hover:bg-slate-50">Load more</button>
+    </div>
 </div>
 
+<style>
+    /* Custom chevron so the arrow sits inset from the right edge, not flush against it. */
+    .hma-select {
+        -webkit-appearance: none;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.7rem center;
+        background-size: 0.9rem;
+        padding-right: 2.25rem;
+    }
+</style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-theme-quartz.css">
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/dist/ag-grid-community.min.js"></script>
@@ -171,6 +196,7 @@ function copyIntake(btn) {
 }
 
 const CSRF = document.querySelector('meta[name=csrf-token]').content;
+const API_TOKEN = @json($apiToken);
 const money = (a, c) => a == null ? '' : new Intl.NumberFormat('en-US', {style:'currency', currency: c || 'USD'}).format(a);
 
 const BADGE = {
@@ -188,33 +214,42 @@ const BADGE = {
 const badge = s => { const [t,c] = BADGE[s] || [s,'bg-slate-100 text-slate-600']; return `<span class="px-2 py-0.5 rounded-full text-xs font-medium ${c}">${t}</span>`; };
 const ACTIONABLE = ['needs_review','scheduled','held'];
 
-function submitAction(id, verb) {
-    const f = document.createElement('form');
-    f.method = 'POST'; f.action = `/app/invoices/${id}/${verb}`;
-    f.innerHTML = `<input type="hidden" name="_token" value="${CSRF}">`;
-    document.body.appendChild(f); f.submit();
+// Actions run against the REST API and refresh the grid live — no page reload.
+async function submitAction(id, verb) {
+    const res = await fetch(`/api/v1/invoices/${id}/${verb}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + API_TOKEN, 'Accept': 'application/json' },
+    });
+    if (res.ok) await load();
+    return res.ok;
 }
-function actionButtons(id, status) {
-    if (!ACTIONABLE.includes(status)) return '';
-    const btn = (verb, label, cls) => `<button onclick="submitAction(${id},'${verb}')" class="px-3 py-1 rounded-full text-xs font-medium ${cls}">${label}</button>`;
-    return `<div class="flex gap-1">
-        ${btn('approve','Approve & pay','bg-brand-600 text-white hover:bg-brand-700')}
-        ${btn('hold','Hold','bg-slate-100 text-slate-700 hover:bg-slate-200')}
-        ${btn('reject','Reject','bg-rose-50 text-rose-600 hover:bg-rose-100')}
-    </div>`;
+async function onAction(id, sel) {
+    const verb = sel.value;
+    if (!verb) return;
+    sel.disabled = true;
+    await submitAction(id, verb);   // load() re-renders the grid, replacing this cell
+}
+function actionMenu(id, status) {
+    if (!ACTIONABLE.includes(status)) return '<span class="text-slate-300 text-xs">—</span>';
+    return `<select onchange="onAction(${id}, this)" aria-label="Invoice actions"
+            class="hma-select rounded-full border border-slate-300 bg-white pl-3 py-1 text-xs text-slate-700 hover:bg-slate-50 focus:outline-none">
+        <option value="">Actions</option>
+        <option value="approve">Approve &amp; pay</option>
+        <option value="hold">Hold</option>
+        <option value="reject">Reject</option>
+    </select>`;
 }
 
 let gridApi = null;
 let allInvoices = [];
 
-function renderStats(stats, balance) {
-    const set = (k, v) => { const el = document.querySelector(`[data-stat="${k}"]`); if (el) el.textContent = v; };
-    const sub = (k, v) => { const el = document.querySelector(`[data-substat="${k}"]`); if (el) el.textContent = v; };
-    set('needs_review', stats.needs_review); sub('needs_review', money(stats.needs_review_amount, 'USD') + ' pending');
-    set('scheduled', stats.scheduled);       sub('scheduled', money(stats.scheduled_amount, 'USD') + ' scheduled');
-    set('paid', stats.paid);                 sub('paid', money(stats.paid_amount, 'USD') + ' paid');
-    if (balance) { set('paypal_balance', money(balance.available, balance.currency)); sub('paypal_balance', balance.demo ? 'Sandbox (demo)' : 'Available'); }
-    else { set('paypal_balance', '—'); sub('paypal_balance', 'Not connected'); }
+const setStat = (k, v) => { const el = document.querySelector(`[data-stat="${k}"]`); if (el) el.textContent = v; };
+const subStat = (k, v) => { const el = document.querySelector(`[data-substat="${k}"]`); if (el) el.textContent = v; };
+
+function renderStats(stats) {
+    setStat('needs_review', stats.needs_review); subStat('needs_review', money(stats.needs_review_amount, 'USD') + ' pending');
+    setStat('scheduled', stats.scheduled);       subStat('scheduled', money(stats.scheduled_amount, 'USD') + ' scheduled');
+    setStat('paid', stats.paid);                 subStat('paid', money(stats.paid_amount, 'USD') + ' paid');
 }
 
 const COLUMNS = [
@@ -227,51 +262,80 @@ const COLUMNS = [
     { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
     { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
     { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : '' },
-    { headerName: 'Action', minWidth: 220, cellRenderer: p => actionButtons(p.data.id, p.data.status) },
+    { headerName: 'Action', width: 160, flex: 0, pinned: 'right', resizable: false, sortable: false, cellRenderer: p => actionMenu(p.data.id, p.data.status) },
 ];
+
+function filterParams() {
+    const p = new URLSearchParams();
+    const q = (document.getElementById('f-search').value || '').trim();
+    const st = document.getElementById('f-status').value;
+    const src = document.getElementById('f-source').value;
+    const ccy = document.getElementById('f-currency').value;
+    if (q) p.set('search', q);
+    if (st) p.set('status', st);
+    if (src) p.set('source', src);
+    if (ccy) p.set('currency', ccy);
+    return p;
+}
 
 function filterStatus(status) {
     document.getElementById('f-status').value = status;
-    applyFilters();
+    fetchQueue({ reset: true });
     document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function applyFilters() {
-    const q = (document.getElementById('f-search').value || '').toLowerCase().trim();
-    const st = document.getElementById('f-status').value;
-    const src = document.getElementById('f-source').value;
+let nextPage = 1;
+let hasMore = false;
+let loadingQueue = false;
 
-    const filtered = allInvoices.filter(r => {
-        if (st && r.status !== st) return false;
-        if (src && r.source !== src) return false;
-        if (q && !`${r.vendor||''} ${r.invoice_number||''} ${r.email||''}`.toLowerCase().includes(q)) return false;
-        return true;
-    });
+// The queue is filtered + paginated server-side; the client holds only the rows
+// it's shown. reset:true fetches a fresh page 1; reset:false appends the next.
+async function fetchQueue({ reset = true } = {}) {
+    if (loadingQueue) return;
+    loadingQueue = true;
+    try {
+        const p = filterParams();
+        p.set('page', reset ? 1 : nextPage);
+        const res = await fetch('/app/queue?' + p.toString());
+        const data = await res.json();
+        allInvoices = reset ? (data.invoices || []) : allInvoices.concat(data.invoices || []);
+        hasMore = !!data.has_more;
+        nextPage = data.next_page;
+        renderQueue();
+    } finally {
+        loadingQueue = false;
+    }
+}
 
+function renderQueue() {
     const gridEl = document.getElementById('grid');
     const fb = document.getElementById('fallback');
     const emptyEl = document.getElementById('empty');
+    document.getElementById('load-more').classList.toggle('hidden', !hasMore);
 
-    if (!filtered.length) {
+    if (!allInvoices.length) {
         gridEl.classList.add('hidden'); fb.classList.add('hidden');
         emptyEl.classList.remove('hidden');
-        emptyEl.textContent = allInvoices.length
+        emptyEl.textContent = [...filterParams().keys()].length
             ? 'No invoices match your filters.'
             : 'No invoices yet — share your intake link above and they’ll show up here.';
         return;
     }
 
     emptyEl.classList.add('hidden');
-    if (gridApi) { gridEl.classList.remove('hidden'); fb.classList.add('hidden'); gridApi.setGridOption('rowData', filtered); }
-    else { renderFallback(filtered); }
+    if (gridApi) { gridEl.classList.remove('hidden'); fb.classList.add('hidden'); gridApi.setGridOption('rowData', allInvoices); }
+    else { renderFallback(allInvoices); }
 }
 
-async function load() {
-    const res = await fetch('/app/data');
-    const data = await res.json();
-    allInvoices = data.invoices || [];
-    renderStats(data.stats, data.paypal_balance);
+function populateCurrencies(list) {
+    const sel = document.getElementById('f-currency');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">All currencies</option>' +
+        (list || []).map(c => `<option value="${c}">${c}</option>`).join('');
+    sel.value = (list || []).includes(current) ? current : '';  // keep selection if still present
+}
 
+function initGrid() {
     if (window.agGrid && agGrid.createGrid && !gridApi) {
         gridApi = agGrid.createGrid(document.getElementById('grid'), {
             rowData: [],
@@ -279,7 +343,30 @@ async function load() {
             columnDefs: COLUMNS,
         });
     }
-    applyFilters();
+}
+
+// Summary metrics — one grouped DB aggregate, independent of the queue page.
+async function loadSummary() {
+    const res = await fetch('/app/summary');
+    const data = await res.json();
+    renderStats(data.stats);
+    populateCurrencies(data.currencies);
+}
+
+// Slow path: reconcile payout settlements with the rail, after the grid is up.
+// If anything settled (scheduled → paid), refresh the affected views.
+async function syncSettlements() {
+    try {
+        const res = await fetch('/app/balance');
+        const data = await res.json();
+        if (data.reconciled > 0) await Promise.all([loadSummary(), fetchQueue({ reset: true })]);
+    } catch (e) { /* non-fatal: statuses just refresh on next load */ }
+}
+
+async function load() {
+    initGrid();
+    await Promise.all([loadSummary(), fetchQueue({ reset: true })]); // cheap DB calls, in parallel
+    syncSettlements();                                               // async; grid already visible
 }
 
 function renderFallback(rows) {
@@ -298,14 +385,113 @@ function renderFallback(rows) {
             <td class="pr-3 text-slate-500">${r.source ?? ''}</td>
             <td class="pr-3 text-slate-500">${r.reasons ?? ''}</td>
             <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : ''}</td>
-            <td>${actionButtons(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
+            <td>${actionMenu(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
 }
 
-['f-search','f-status','f-source'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener('input', applyFilters);
-    el.addEventListener('change', applyFilters);
+// Filter changes refetch from the server (page 1). Debounce the search box so
+// we don't fire a request per keystroke.
+let searchTimer;
+document.getElementById('f-search').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => fetchQueue({ reset: true }), 300);
 });
+['f-status','f-source','f-currency'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => fetchQueue({ reset: true }));
+});
+
+// ---- Add an invoice via the public REST API (the dashboard dogfoods /api/v1) ----
+// On success we re-pull the feed so the metrics + queue update in real time,
+// no page reload.
+function wireInvoiceForm(id) {
+    const form = document.getElementById(id);
+    if (!form) return;
+    const btn = form.querySelector('button');
+    const feedback = form.querySelector('[data-feedback]');
+    const say = (msg, cls) => { feedback.textContent = msg; feedback.className = 'text-xs ' + (cls || 'text-slate-500'); };
+
+    const defer = form.dataset.defer === '1';
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = new FormData(form);
+        body.append('source', form.dataset.source);
+        if (defer) body.append('defer', '1');
+
+        btn.disabled = true;
+        say('Sending…');
+        try {
+            const res = await fetch('/api/v1/invoices', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + API_TOKEN, 'Accept': 'application/json' },
+                body,
+            });
+            if (res.status !== 201) {
+                if (res.status === 422) {
+                    const { message, errors } = await res.json();
+                    say(errors ? Object.values(errors)[0][0] : (message || 'Check the fields and try again.'), 'text-rose-600');
+                } else {
+                    say('Something went wrong (' + res.status + ').', 'text-rose-600');
+                }
+                return;
+            }
+
+            const inv = await res.json();
+            form.reset();
+
+            if (defer) {
+                // Phase 1 done: the file is on S3 and the AI read is queued as a
+                // background job. Confirm instantly, show the "reading…" row, then
+                // poll until the worker finishes and fill the row live.
+                say('Uploaded ✓ — AI is reading it in the background…', 'text-emerald-600 font-medium');
+                await load();
+                document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                const done = await waitForRead(inv.id);
+                if (done) say(decisionLine(done), 'text-emerald-600 font-medium');
+            } else {
+                say(decisionLine(inv), 'text-emerald-600 font-medium');
+                await load();
+                document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        } catch (err) {
+            say('Network error — please retry.', 'text-rose-600');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Poll the feed while the background job reads the invoice. If no worker picks
+// it up in time (e.g. the queue worker isn't running), fall back to reading it
+// synchronously so the UI never hangs on "reading…".
+async function waitForRead(id) {
+    for (let i = 0; i < 6; i++) {
+        await sleep(2500);
+        await fetchQueue({ reset: true });   // queue feed only — don't re-poll the rail each tick
+        const inv = allInvoices.find(r => r.id === id);
+        if (inv && inv.status !== 'extracting') { loadSummary(); return inv; }
+    }
+    const res = await fetch(`/api/v1/invoices/${id}/extract`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + API_TOKEN, 'Accept': 'application/json' },
+    });
+    await Promise.all([fetchQueue({ reset: true }), loadSummary()]);
+    return res.ok ? await res.json() : allInvoices.find(r => r.id === id);
+}
+
+function decisionLine(inv) {
+    const v = inv.vendor?.name || inv.vendor_name || 'Invoice';
+    const map = {
+        scheduled:    `✓ ${v} auto-approved — scheduled for payment`,
+        paid:         `✓ ${v} paid`,
+        paying:       `✓ ${v} — payment in progress`,
+        needs_review: `Added — ${v} needs your review`,
+    };
+    return map[inv.status] || `Added — ${v} (${(inv.status || '').replace('_',' ')})`;
+}
+wireInvoiceForm('form-upload');
+wireInvoiceForm('form-manual');
 
 load();
 </script>

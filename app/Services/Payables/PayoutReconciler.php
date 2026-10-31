@@ -5,43 +5,45 @@ namespace App\Services\Payables;
 use App\Models\Invoice;
 use App\Models\Payout;
 use App\Models\User;
-use App\Services\PayPal\PayoutGateway;
+use App\Services\Payouts\PayoutGatewayResolver;
+use Illuminate\Support\Facades\Cache;
 
 /**
- * PayPal Payouts settle asynchronously — a batch comes back PENDING/PROCESSING
- * and only later turns SUCCESS (or DENIED). This brings our records in line with
- * PayPal's actual state: it polls each in-flight batch and advances the payout
- * and its invoice to paid/failed. Run on a schedule, and opportunistically when
- * the dashboard loads so the UI self-heals without a worker.
+ * Some payouts settle asynchronously — accepted first, terminal (SUCCESS/FAILED)
+ * later. This brings our records in line with the rail's actual state: it polls
+ * each in-flight payout and advances the payout and its invoice to paid/failed.
+ * Run on a schedule, and opportunistically when the dashboard loads so the UI
+ * self-heals without a worker.
  */
 class PayoutReconciler
 {
-    public function __construct(private readonly PayoutGateway $gateway) {}
+    public function __construct(private readonly PayoutGatewayResolver $gateways) {}
 
     /** @return int number of payouts advanced to a terminal state */
-    public function reconcile(?User $user = null): int
+    public function reconcile(User $user): int
     {
-        $query = Payout::query()
-            ->where('status', Payout::STATUS_PROCESSING)
-            ->whereNotNull('paypal_batch_id')
-            ->with('invoice');
+        // Status is read from the same (merchant-owned) account that sent it.
+        $gateway = $this->gateways->for($user);
 
-        if ($user) {
-            $query->where('user_id', $user->id);
-        }
+        $payouts = Payout::query()
+            ->where('status', Payout::STATUS_PROCESSING)
+            ->whereNotNull('provider_ref')
+            ->where('user_id', $user->id)
+            ->with('invoice')
+            ->get();
 
         $advanced = 0;
 
-        foreach ($query->get() as $payout) {
-            $raw = rescue(fn () => $this->gateway->status($payout->paypal_batch_id), null, false);
+        foreach ($payouts as $payout) {
+            $raw = rescue(fn () => $gateway->status($payout->provider_ref), null, false);
             if ($raw === null) {
                 continue;
             }
 
             $terminal = match ($raw) {
                 'SUCCESS' => Payout::STATUS_PAID,
-                'DENIED', 'CANCELED' => Payout::STATUS_FAILED,
-                default => null, // still PENDING/PROCESSING
+                'FAILED' => Payout::STATUS_FAILED,
+                default => null, // still PENDING / processing
             };
             if ($terminal === null) {
                 continue;
@@ -49,13 +51,15 @@ class PayoutReconciler
 
             $payout->update([
                 'status' => $terminal,
-                'paypal_status' => $raw,
+                'provider_status' => $raw,
                 'paid_at' => $terminal === Payout::STATUS_PAID ? now() : null,
             ]);
 
             $payout->invoice?->update([
                 'status' => $terminal === Payout::STATUS_PAID ? Invoice::STATUS_PAID : Invoice::STATUS_FAILED,
             ]);
+
+            Cache::forget("payout_balance:{$payout->user_id}"); // settlement changed the balance
 
             $advanced++;
         }

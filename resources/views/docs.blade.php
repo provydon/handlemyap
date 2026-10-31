@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HandlemyAP — API & MCP docs</title>
-    <meta name="description" content="Embed HandlemyAP in your app: submit invoices over REST or MCP and let AI read them and your rules pay them via PayPal.">
+    <meta name="description" content="Embed HandlemyAP in your app: submit invoices over REST or MCP and let AI read them and your rules pay them by bank transfer (ACH).">
     @include('partials.head')
 </head>
 <body class="bg-white text-slate-800 antialiased">
@@ -50,7 +50,7 @@
             <h1 class="text-3xl font-bold text-slate-900">API &amp; MCP docs</h1>
             <p class="mt-3 text-slate-600 max-w-2xl">
                 HandlemyAP is accounts payable as a service. Send it an invoice and it reads the document with
-                AI, applies the account owner’s auto-approval rules, and pays the vendor via <strong>PayPal Payouts</strong> —
+                AI, applies the account owner’s auto-approval rules, and pays the vendor via <strong>ACH</strong> —
                 parking anything outside the rules for a human. Two ways to integrate:
             </p>
             <div class="grid sm:grid-cols-2 gap-4 mt-6">
@@ -95,11 +95,11 @@
                             ['POST', '/api/v1/invoices', 'Submit a payable (JSON fields or a multipart file). Runs extraction + rules.'],
                             ['GET', '/api/v1/invoices', 'List your invoices, newest first.'],
                             ['GET', '/api/v1/invoices/{id}', 'Fetch one invoice with its vendor and payouts.'],
-                            ['POST', '/api/v1/invoices/{id}/approve', 'Approve a parked invoice → pays or schedules the PayPal payout.'],
+                            ['POST', '/api/v1/invoices/{id}/approve', 'Approve a parked invoice → pays or schedules the ACH payout.'],
                             ['POST', '/api/v1/invoices/{id}/hold', 'Park an invoice.'],
                             ['POST', '/api/v1/invoices/{id}/reject', 'Decline an invoice.'],
                             ['GET', '/api/v1/vendors', 'List vendors.'],
-                            ['GET', '/api/v1/payouts', 'List PayPal payouts and their status.'],
+                            ['GET', '/api/v1/payouts', 'List ACH payouts and their status.'],
                             ['GET', '/api/v1/rules', 'Read your auto-approval rules.'],
                             ['PUT', '/api/v1/rules', 'Update your auto-approval rules.'],
                         ] as [$m, $p, $d])
@@ -115,7 +115,7 @@
 
             <h3 class="font-semibold text-slate-900 mt-8 mb-2">Submit an invoice</h3>
             <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
-<pre class="whitespace-pre"><span class="text-slate-400"># AI extracts, rules decide, PayPal pays</span>
+<pre class="whitespace-pre"><span class="text-slate-400"># AI extracts, rules decide, ACH pays</span>
 curl -X POST {{ $base }}/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
   -d vendor_name=<span class="text-amber-200">"Jane Q Notary"</span> \
@@ -159,11 +159,11 @@ curl -X POST {{ $base }}/api/v1/invoices \
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Tools</h3>
             <div class="grid sm:grid-cols-2 gap-3">
                 @foreach ([
-                    ['submit_invoice', 'Add a payable. AI/normalise → rules → auto-pay via PayPal or park for review.'],
+                    ['submit_invoice', 'Add a payable. AI/normalise → rules → auto-pay via ACH or park for review.'],
                     ['list_invoices', 'See the queue, optionally filtered by status.'],
                     ['get_invoice', 'Inspect one invoice and its payout history.'],
                     ['approve_invoice', 'Release a parked invoice — the human-in-the-loop step.'],
-                    ['list_payouts', 'See PayPal payouts and their settlement status.'],
+                    ['list_payouts', 'See ACH payouts and their settlement status.'],
                 ] as [$t, $d])
                 <div class="rounded-2xl border border-slate-200 p-4">
                     <code class="text-brand-600 text-sm">{{ $t }}</code>
@@ -219,7 +219,7 @@ curl -X POST {{ $base }}/api/v1/invoices \
         </section>
 
         <div class="border-t border-slate-100 pt-8 text-sm text-slate-400">
-            Handlemy<span class="text-brand-600">AP</span> — AI accounts payable → PayPal ·
+            Handlemy<span class="text-brand-600">AP</span> — AI accounts payable ·
             <a href="/" class="hover:text-slate-600">Home</a> ·
             <a href="https://github.com/provydon/handlemyap" class="hover:text-slate-600">GitHub</a>
         </div>

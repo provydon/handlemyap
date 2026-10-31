@@ -14,6 +14,7 @@ class Vendor extends Model
 
     protected $fillable = [
         'user_id', 'name', 'email', 'country', 'currency', 'external_ref', 'metadata',
+        'dwolla_funding_source_id',
     ];
 
     protected function casts(): array

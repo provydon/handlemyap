@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\PayPal;
+namespace App\Services\Payouts;
 
 use App\Models\Payout;
 use App\Models\Vendor;
 
 /**
  * Local/test gateway — pretends the payout settled instantly. Lets the entire
- * flow run (and be asserted) with no PayPal credentials or network.
+ * flow run (and be asserted) with no Dwolla credentials or network.
  */
 class FakePayoutGateway implements PayoutGateway
 {
@@ -15,13 +15,13 @@ class FakePayoutGateway implements PayoutGateway
     {
         return PayoutResult::accepted(
             status: 'paid',
-            batchId: 'FAKE-BATCH-'.$payout->id,
-            itemId: 'FAKE-ITEM-'.$payout->id,
+            reference: 'FAKE-TR-'.$payout->id,
+            itemReference: 'FAKE-ITEM-'.$payout->id,
             rawStatus: 'SUCCESS',
         );
     }
 
-    public function status(string $batchId): ?string
+    public function status(string $reference): ?string
     {
         return 'SUCCESS';
     }
@@ -29,6 +29,6 @@ class FakePayoutGateway implements PayoutGateway
     public function balance(): ?array
     {
         // No real account in offline/demo mode — a believable figure for the UI.
-        return ['currency' => 'USD', 'available' => 2500.00, 'demo' => true];
+        return ['state' => 'ok', 'currency' => 'USD', 'available' => 2500.00, 'demo' => true];
     }
 }

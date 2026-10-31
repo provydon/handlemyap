@@ -19,6 +19,7 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('invoices', [InvoiceController::class, 'index']);
     Route::post('invoices', [InvoiceController::class, 'store']);
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
+    Route::post('invoices/{invoice}/extract', [InvoiceController::class, 'extract']);
     Route::post('invoices/{invoice}/approve', [InvoiceController::class, 'approve']);
     Route::post('invoices/{invoice}/hold', [InvoiceController::class, 'hold']);
     Route::post('invoices/{invoice}/reject', [InvoiceController::class, 'reject']);

@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IntakeController;
 use App\Http\Controllers\McpController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\VendorController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'))->name('home');
@@ -31,7 +32,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->n
 
 Route::middleware('auth')->group(function () {
     Route::get('/app', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/app/data', [DashboardController::class, 'data']);
+    Route::get('/app/summary', [DashboardController::class, 'summary']);
+    Route::get('/app/queue', [DashboardController::class, 'queue']);
+    Route::get('/app/balance', [DashboardController::class, 'balance']);
     Route::post('/app/invoices', [DashboardController::class, 'store']);
     Route::get('/app/invoices/{invoice}/file', [DashboardController::class, 'file'])->name('invoice.file');
     Route::post('/app/invoices/{invoice}/approve', [DashboardController::class, 'approve']);
@@ -41,6 +44,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
     Route::post('/settings/rules', [SettingsController::class, 'updateRule']);
     Route::post('/settings/handle', [SettingsController::class, 'updateHandle']);
+    Route::post('/settings/currency', [SettingsController::class, 'updateCurrency']);
+    Route::get('/app/vendors', [VendorController::class, 'index'])->name('vendors');
+    Route::post('/app/vendors/{vendor}/bank', [VendorController::class, 'storeBank']);
+
+    Route::post('/settings/bank/connect', [SettingsController::class, 'connectBank']);
+    Route::post('/settings/bank/disconnect', [SettingsController::class, 'disconnectBank']);
+    Route::post('/settings/bank/plaid/link-token', [SettingsController::class, 'plaidLinkToken']);
+    Route::post('/settings/bank/plaid/connect', [SettingsController::class, 'connectBankPlaid']);
     Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
     Route::delete('/settings/tokens/{id}', [SettingsController::class, 'deleteToken']);
 });

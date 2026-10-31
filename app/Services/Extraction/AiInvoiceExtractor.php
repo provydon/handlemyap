@@ -36,7 +36,7 @@ class AiInvoiceExtractor implements InvoiceExtractor
                 'anthropic-version' => '2023-06-01',
             ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
                 'model' => $this->model,
-                'max_tokens' => 1024,
+                'max_tokens' => 2048,
                 'messages' => [[
                     'role' => 'user',
                     'content' => [$block, ['type' => 'text', 'text' => $this->prompt()]],
@@ -86,13 +86,32 @@ class AiInvoiceExtractor implements InvoiceExtractor
     private function prompt(): string
     {
         return <<<'TXT'
-        Extract this invoice into STRICT JSON with exactly these keys (use null when absent):
-        {"vendor_name": string|null, "vendor_email": string|null, "invoice_number": string|null,
-         "amount": number|null, "currency": string|null (ISO 4217), "issue_date": "YYYY-MM-DD"|null,
-         "due_date": "YYYY-MM-DD"|null, "po_ref": string|null,
-         "line_items": [{"description": string, "qty": number, "unit_price": number}]|null,
-         "confidence": integer 0-100 (how sure you are overall)}
-        Return ONLY the JSON object, no prose, no code fences.
+        You are reading a vendor invoice. Extract EVERYTHING into STRICT JSON with
+        exactly these keys (use null when a value is genuinely absent — never guess):
+        {
+          "vendor_name": string|null,
+          "vendor_email": string|null,            // the vendor's contact email
+          "invoice_number": string|null,
+          "amount": number|null,                   // the grand total / amount due
+          "currency": string|null,                 // ISO 4217, e.g. USD, NGN, EUR
+          "issue_date": "YYYY-MM-DD"|null,
+          "due_date": "YYYY-MM-DD"|null,
+          "po_ref": string|null,
+          "line_items": [                          // EVERY line on the invoice
+            {"description": string, "qty": number|null, "unit_price": number|null, "amount": number|null}
+          ]|null,
+          "payment": {                             // how the vendor wants to be paid
+            "method": "paypal"|"bank_transfer"|"card"|"crypto"|"other"|null,
+            "paypal_email": string|null,           // the PayPal address to pay, if any
+            "bank": string|null,                   // account / IBAN / routing details as written
+            "instructions": string|null            // any free-text pay-to instructions
+          },
+          "notes": string|null,                    // any other relevant note on the invoice
+          "confidence": integer                    // 0-100, how sure you are overall
+        }
+        If the invoice says to pay via PayPal, put that address in payment.paypal_email.
+        Amounts are plain numbers (no currency symbols or thousands separators).
+        Return ONLY the JSON object — no prose, no markdown, no code fences.
         TXT;
     }
 
@@ -102,6 +121,13 @@ class AiInvoiceExtractor implements InvoiceExtractor
             $data = json_decode($m[0], true);
             if (is_array($data)) {
                 $data['confidence'] = (int) ($data['confidence'] ?? 50);
+
+                // Payouts settle to a PayPal email, so when the invoice names one
+                // prefer it as the address we'll actually pay.
+                $paypal = $data['payment']['paypal_email'] ?? null;
+                if (is_string($paypal) && $paypal !== '') {
+                    $data['vendor_email'] = $paypal;
+                }
 
                 return array_filter($data, fn ($v) => $v !== null);
             }

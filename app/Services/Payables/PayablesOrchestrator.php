@@ -6,9 +6,11 @@ use App\Models\Invoice;
 use App\Models\Payout;
 use App\Models\User;
 use App\Services\Extraction\InvoiceExtractor;
-use App\Services\PayPal\PayoutGateway;
+use App\Services\Payouts\PayoutGatewayResolver;
+use App\Services\Payouts\UnconnectedPayoutGateway;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * The transport-agnostic heart of handlemyap. The dashboard, the REST API and
@@ -25,19 +27,38 @@ class PayablesOrchestrator
     public function __construct(
         private readonly InvoiceExtractor $extractor,
         private readonly RuleEngine $rules,
-        private readonly PayoutGateway $gateway,
+        private readonly PayoutGatewayResolver $gateways,
     ) {}
 
-    /** Ingest an uploaded document (dashboard / API multipart). */
+    /** Ingest an uploaded document end-to-end (store → read → route) in one call. */
     public function ingestUpload(User $user, UploadedFile $file, array $meta = []): Invoice
     {
-        $invoice = $this->create($user, [
+        return $this->processExtraction($this->receiveUpload($user, $file, $meta));
+    }
+
+    /**
+     * Phase 1 of an upload: push the document to storage (S3) right away and
+     * park it as "extracting". Returns immediately so the uploader gets an
+     * instant "received" confirmation; the AI read happens in phase 2.
+     */
+    public function receiveUpload(User $user, UploadedFile $file, array $meta = []): Invoice
+    {
+        return $this->create($user, [
+            'status' => Invoice::STATUS_EXTRACTING,
             'source' => $meta['source'] ?? 'upload',
             'original_filename' => $file->getClientOriginalName(),
             'file_path' => $file->store('invoices'),
             'external_ref' => $meta['external_ref'] ?? null,
             'metadata' => $meta['metadata'] ?? null,
         ]);
+    }
+
+    /** Phase 2: run AI extraction on a received upload, then route it. Idempotent. */
+    public function processExtraction(Invoice $invoice): Invoice
+    {
+        if (! in_array($invoice->status, [Invoice::STATUS_RECEIVED, Invoice::STATUS_EXTRACTING], true)) {
+            return $invoice; // already read & routed
+        }
 
         return $this->finalize($invoice, extract: true);
     }
@@ -101,7 +122,7 @@ class PayablesOrchestrator
         return $this->pay($invoice);
     }
 
-    /** Trigger the actual PayPal payout for an approved/scheduled invoice. */
+    /** Trigger the actual payout (ACH via Dwolla) for an approved/scheduled invoice. */
     public function pay(Invoice $invoice): ?Payout
     {
         $invoice->loadMissing('vendor');
@@ -109,7 +130,19 @@ class PayablesOrchestrator
         if (! $invoice->isPayable()) {
             $invoice->update([
                 'status' => Invoice::STATUS_NEEDS_REVIEW,
-                'review_reasons' => ['Not payable: missing amount, currency, or vendor payout email'],
+                'review_reasons' => ['Not payable: missing amount, currency, or vendor payout details'],
+            ]);
+
+            return null;
+        }
+
+        // Pay from the business's connected bank (ACH via Dwolla).
+        $gateway = $this->gateways->for($invoice->user);
+
+        if ($gateway instanceof UnconnectedPayoutGateway) {
+            $invoice->update([
+                'status' => Invoice::STATUS_NEEDS_REVIEW,
+                'review_reasons' => ['Connect a bank for ACH payouts in Settings to pay this invoice.'],
             ]);
 
             return null;
@@ -125,7 +158,7 @@ class PayablesOrchestrator
         ]);
         $invoice->update(['status' => Invoice::STATUS_PAYING]);
 
-        $result = $this->gateway->send($payout, $invoice->vendor);
+        $result = $gateway->send($payout, $invoice->vendor);
 
         $payout->update([
             'status' => match (true) {
@@ -133,9 +166,9 @@ class PayablesOrchestrator
                 $result->ok => Payout::STATUS_PROCESSING,
                 default => Payout::STATUS_FAILED,
             },
-            'paypal_batch_id' => $result->batchId,
-            'paypal_item_id' => $result->itemId,
-            'paypal_status' => $result->rawStatus,
+            'provider_ref' => $result->reference,
+            'provider_item_ref' => $result->itemReference,
+            'provider_status' => $result->rawStatus,
             'paid_at' => $result->status === 'paid' ? now() : null,
             'failure_reason' => $result->error,
         ]);
@@ -147,6 +180,9 @@ class PayablesOrchestrator
                 default => Invoice::STATUS_PAYING, // async; reconciled later
             },
         ]);
+
+        // Money just moved — drop the cached balance so the dashboard refetches.
+        Cache::forget("payout_balance:{$invoice->user_id}");
 
         return $payout->refresh();
     }
@@ -176,6 +212,11 @@ class PayablesOrchestrator
             $this->applyExtracted($invoice, $extracted);
         }
 
+        // Fall back to the account's default currency when none was found.
+        if (blank($invoice->currency)) {
+            $invoice->update(['currency' => $invoice->user->default_currency ?: 'USD']);
+        }
+
         $this->matchVendor($invoice, $extracted);
         $this->route($invoice);
 
@@ -195,6 +236,20 @@ class PayablesOrchestrator
             'line_items' => $d['line_items'] ?? null,
             'confidence' => $d['confidence'] ?? null,
         ], fn ($v) => $v !== null))->save();
+
+        // Keep the full structured read — payment details (e.g. the payout
+        // email / destination), instructions and free-text notes — even where
+        // there's no dedicated column, so nothing the AI found is thrown away.
+        $meta = $invoice->metadata ?? [];
+        if (! empty($d['payment'])) {
+            $meta['payment'] = $d['payment'];
+        }
+        if (! empty($d['notes'])) {
+            $meta['notes'] = $d['notes'];
+        }
+        if (! empty($meta)) {
+            $invoice->update(['metadata' => $meta]);
+        }
     }
 
     private function matchVendor(Invoice $invoice, array $extracted): void
@@ -217,7 +272,7 @@ class PayablesOrchestrator
             $vendor = $invoice->user->vendors()->create([
                 'name' => $name,
                 'email' => $email,
-                'currency' => $invoice->currency ?: 'USD',
+                'currency' => $invoice->currency ?: ($invoice->user->default_currency ?: 'USD'),
             ]);
         }
 
