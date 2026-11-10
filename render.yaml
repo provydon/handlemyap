@@ -1,41 +1,31 @@
-# Render Blueprint for handlemyap (also deployable via the Render API).
-databases:
-  - name: handlemyap-db
-    plan: free
-    databaseName: handlemyap
-    user: handlemyap
-    region: oregon
-
+# Render blueprint for handlemyap. (The live demo is a Docker web service built
+# from the Dockerfile; this file documents/reproduces that setup.)
 services:
   - type: web
     name: handlemyap
     runtime: docker
-    plan: free
-    region: oregon
     dockerfilePath: ./Dockerfile
+    plan: free
+    region: frankfurt
     autoDeploy: true
     envVars:
       - key: APP_KEY
-        sync: false   # set in the Render dashboard / via API (php artisan key:generate --show)
+        generateValue: true
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: "false"
-      - key: LOG_CHANNEL
-        value: stderr
-      - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_URL
-        fromDatabase:
-          name: handlemyap-db
-          property: connectionString
-      - key: SESSION_DRIVER
-        value: file
-      - key: CACHE_STORE
-        value: file
-      - key: QUEUE_CONNECTION
-        value: sync
-      # PayPal + AI are optional — the app runs with safe fakes until you add them:
-      # - key: PAYPAL_CLIENT_ID
-      # - key: PAYPAL_SECRET
-      # - key: ANTHROPIC_API_KEY
+      - key: HANDLEMYAP_GATEWAY
+        value: auto
+      - key: HANDLEMYAP_EXTRACTOR
+        value: auto
+      # Set these in the Render dashboard to light up the real integrations.
+      # Without them the app runs in demo mode (offline AI stub + simulated capture).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_SECRET
+        sync: false
+      - key: PAYPAL_ENV
+        value: sandbox
