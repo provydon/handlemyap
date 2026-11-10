@@ -1,6 +1,6 @@
 # handlemyap — single-container deploy for Render (and any Docker host).
 # No Node build: Tailwind, AG Grid and the PayPal JS SDK are all loaded from CDNs.
-FROM php:8.3-cli-bookworm
+FROM php:8.4-cli-bookworm
 
 # System libs + PHP extensions Laravel needs (SQLite, mbstring, zip, bcmath).
 RUN apt-get update && apt-get install -y --no-install-recommends \
