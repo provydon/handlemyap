@@ -1,0 +1,23 @@
+INVOICE
+
+Vendor:       ACME Studio LLC
+Email:        billing@acmestudio.example
+Invoice no:   ACM-2026-0412
+Invoice date: 2026-11-03
+Due date:     2026-11-17
+PO number:    PO-5590
+Bill to:      handlemyap demo workspace
+
+------------------------------------------------------------
+Description                      Qty    Unit price    Amount
+------------------------------------------------------------
+Brand design sprint               1       2,400.00   2,400.00
+Landing page (3 variants)         3         600.00   1,800.00
+Icon set                         40           9.00     360.00
+------------------------------------------------------------
+                                        Subtotal     4,560.00
+                                        Tax (0%)         0.00
+Total due:  USD 4,560.00
+
+Payment: please pay via PayPal to billing@acmestudio.example
+Thanks for your business!

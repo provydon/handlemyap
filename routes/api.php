@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\PayoutController;
-use App\Http\Controllers\Api\V1\RuleController;
 use App\Http\Controllers\Api\V1\VendorController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,13 +14,12 @@ use Illuminate\Support\Facades\Route;
 | Create a token at /settings/api in the dashboard.
 */
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
-    Route::get('me', fn (\Illuminate\Http\Request $r) => $r->user()->only('id', 'name', 'email'));
+    Route::get('me', fn (Request $r) => $r->user()->only('id', 'name', 'email'));
 
     Route::get('invoices', [InvoiceController::class, 'index']);
     Route::post('invoices', [InvoiceController::class, 'store']);
     Route::get('invoices/{invoice}', [InvoiceController::class, 'show']);
     Route::post('invoices/{invoice}/extract', [InvoiceController::class, 'extract']);
-    Route::post('invoices/{invoice}/approve', [InvoiceController::class, 'approve']);
     Route::post('invoices/{invoice}/hold', [InvoiceController::class, 'hold']);
     Route::post('invoices/{invoice}/reject', [InvoiceController::class, 'reject']);
 
@@ -29,7 +28,4 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
 
     Route::get('payouts', [PayoutController::class, 'index']);
     Route::get('payouts/{payout}', [PayoutController::class, 'show']);
-
-    Route::get('rules', [RuleController::class, 'show']);
-    Route::put('rules', [RuleController::class, 'update']);
 });

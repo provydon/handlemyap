@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -42,8 +43,8 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = \App\Models\User::create($data);
-        $user->forceFill(['handle' => \App\Models\User::makeHandle($user->name)])->save();
+        $user = User::create($data);
+        $user->forceFill(['handle' => User::makeHandle($user->name)])->save();
 
         Auth::login($user);
         $request->session()->regenerate();

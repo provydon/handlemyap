@@ -6,8 +6,6 @@ use App\Models\Invoice;
 use App\Models\Payout;
 use App\Models\User;
 use App\Services\Extraction\InvoiceExtractor;
-use App\Services\Payouts\PayoutGatewayResolver;
-use App\Services\Payouts\UnconnectedPayoutGateway;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -17,8 +15,11 @@ use Illuminate\Support\Facades\Cache;
  * the MCP server are all thin callers of this one service, so every surface
  * behaves identically:
  *
- *   ingest → extract/normalise → match vendor → apply rules →
- *       auto-approve (pay/schedule)  OR  park for human review
+ *   ingest → extract/normalise → match vendor → park for review
+ *
+ * Nothing is paid automatically: every invoice waits in the queue until a human
+ * pays it with the "Pay with PayPal" button, which settles from the payer's own
+ * PayPal and is recorded via markPaidByCheckout().
  *
  * AI lives only in the extractor. Everything here is deterministic and audit-able.
  */
@@ -26,8 +27,6 @@ class PayablesOrchestrator
 {
     public function __construct(
         private readonly InvoiceExtractor $extractor,
-        private readonly RuleEngine $rules,
-        private readonly PayoutGatewayResolver $gateways,
     ) {}
 
     /** Ingest an uploaded document end-to-end (store → read → route) in one call. */
@@ -102,91 +101,37 @@ class PayablesOrchestrator
         return $this->finalize($invoice, extract: false, extracted: $extracted);
     }
 
-    /** Human (or MCP agent) approves a parked invoice → pays or schedules it. */
-    public function approve(Invoice $invoice, string|User|null $actor = null): ?Payout
+    /**
+     * Record an invoice paid via the "Pay with PayPal" checkout — the payer
+     * approved and captured the order in their own PayPal. The money has already
+     * moved, so we just log the settled payout and mark the invoice paid. $demo
+     * flags the offline path (no PayPal creds configured).
+     */
+    public function markPaidByCheckout(Invoice $invoice, ?string $orderId, ?string $captureId, bool $demo = false): Payout
     {
-        $invoice->loadMissing('vendor');
-        $invoice->forceFill([
-            'status' => Invoice::STATUS_APPROVED,
-            'approved_at' => now(),
-            'approved_by' => $actor instanceof User ? $actor->email : ($actor ?? 'system'),
-            'review_reasons' => null,
-        ])->save();
-
-        if ($invoice->due_date && $invoice->due_date->isFuture()) {
-            $invoice->update(['status' => Invoice::STATUS_SCHEDULED]); // paid on due date
-
-            return null;
-        }
-
-        return $this->pay($invoice);
-    }
-
-    /** Trigger the actual payout (ACH via Dwolla) for an approved/scheduled invoice. */
-    public function pay(Invoice $invoice): ?Payout
-    {
-        $invoice->loadMissing('vendor');
-
-        if (! $invoice->isPayable()) {
-            $invoice->update([
-                'status' => Invoice::STATUS_NEEDS_REVIEW,
-                'review_reasons' => ['Not payable: missing amount, currency, or vendor payout details'],
-            ]);
-
-            return null;
-        }
-
-        // Route to the right rail for this vendor's country (Dwolla for the US,
-        // Paystack for Nigeria, …) — honoring the business's per-country choice.
-        ['rail' => $rail, 'gateway' => $gateway] = $this->gateways->resolve($invoice->user, $invoice->vendor);
-
-        if ($gateway instanceof UnconnectedPayoutGateway) {
-            $invoice->update([
-                'status' => Invoice::STATUS_NEEDS_REVIEW,
-                'review_reasons' => [$gateway->reason()],
-            ]);
-
-            return null;
-        }
-
         $payout = $invoice->payouts()->create([
             'user_id' => $invoice->user_id,
             'vendor_id' => $invoice->vendor_id,
             'amount' => $invoice->amount,
             'currency' => $invoice->currency,
-            'rail' => $rail,
-            'status' => Payout::STATUS_PENDING,
+            'rail' => 'paypal',
+            'status' => Payout::STATUS_PAID,
+            'provider_ref' => $orderId,
+            'provider_item_ref' => $captureId,
+            'provider_status' => $demo ? 'DEMO_CAPTURE' : 'COMPLETED',
             'scheduled_for' => now(),
-        ]);
-        $invoice->update(['status' => Invoice::STATUS_PAYING]);
-
-        $result = $gateway->send($payout, $invoice->vendor);
-
-        $payout->update([
-            'status' => match (true) {
-                $result->status === 'paid' => Payout::STATUS_PAID,
-                $result->ok => Payout::STATUS_PROCESSING,
-                default => Payout::STATUS_FAILED,
-            },
-            'provider_ref' => $result->reference,
-            'provider_item_ref' => $result->itemReference,
-            'provider_status' => $result->rawStatus,
-            'paid_at' => $result->status === 'paid' ? now() : null,
-            'failure_reason' => $result->error,
+            'paid_at' => now(),
         ]);
 
         $invoice->update([
-            'status' => match (true) {
-                ! $result->ok => Invoice::STATUS_FAILED,
-                $result->status === 'paid' => Invoice::STATUS_PAID,
-                default => Invoice::STATUS_PAYING, // async; reconciled later
-            },
+            'status' => Invoice::STATUS_PAID,
+            'approved_at' => $invoice->approved_at ?? now(),
+            'review_reasons' => null,
         ]);
 
-        // Money just moved — drop the cached balances so the dashboard refetches.
         Cache::forget("payout_balances:{$invoice->user_id}");
 
-        return $payout->refresh();
+        return $payout;
     }
 
     public function hold(Invoice $invoice): void
@@ -287,21 +232,12 @@ class PayablesOrchestrator
         }
     }
 
-    /** Apply the autonomy rules: pay itself, or wait for a human. */
+    /** Every invoice waits in the queue to be paid by hand — no auto-pay. */
     private function route(Invoice $invoice): void
     {
-        $invoice->loadMissing('vendor');
-        $eval = $this->rules->evaluate($invoice, $invoice->user->autoApprovalRule);
-
-        if ($eval['auto_approve']) {
-            $this->approve($invoice, 'auto');
-
-            return;
-        }
-
         $invoice->update([
             'status' => Invoice::STATUS_NEEDS_REVIEW,
-            'review_reasons' => $eval['reasons'],
+            'review_reasons' => null,
         ]);
     }
 

@@ -4,11 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Services\Payables\PayablesOrchestrator;
-use App\Services\Payables\PayoutReconciler;
-use App\Services\Payouts\PayoutGatewayResolver;
-use App\Services\Payouts\RailCatalog;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
@@ -47,8 +43,6 @@ class DashboardController extends Controller
             'stats' => [
                 'needs_review' => $count(Invoice::STATUS_NEEDS_REVIEW),
                 'needs_review_amount' => $sum(Invoice::STATUS_NEEDS_REVIEW),
-                'scheduled' => $count(Invoice::STATUS_SCHEDULED),
-                'scheduled_amount' => $sum(Invoice::STATUS_SCHEDULED),
                 'paid' => $count(Invoice::STATUS_PAID),
                 'paid_amount' => $sum(Invoice::STATUS_PAID),
             ],
@@ -113,63 +107,6 @@ class DashboardController extends Controller
         ];
     }
 
-    /**
-     * The slow, rail-backed bits — loaded asynchronously after the grid is
-     * already on screen. Reconciles in-flight payouts (throttled to once per
-     * 20s per user) and returns one balance PER usable rail (a business can
-     * fund several — a USD Dwolla balance, an NGN Paystack balance, …).
-     * `reconciled` tells the client whether invoice statuses changed and the
-     * queue needs a refresh.
-     */
-    public function balance(Request $request, PayoutReconciler $reconciler, PayoutGatewayResolver $gateways, RailCatalog $catalog)
-    {
-        $user = $request->user();
-        $userId = $user->id;
-
-        $reconciled = 0;
-        // Cache::add is atomic: reconcile runs only when the 20s lock is free.
-        if (Cache::add("reconcile:lock:{$userId}", true, now()->addSeconds(20))) {
-            $reconciled = rescue(fn () => $reconciler->reconcile($user), 0, report: false);
-        }
-
-        $balances = Cache::remember(
-            "payout_balances:{$userId}",
-            now()->addSeconds(60),
-            function () use ($user, $gateways, $catalog) {
-                $out = [];
-                foreach ($catalog->all() as $rail => $meta) {
-                    if (! $catalog->isUsable($rail)) {
-                        continue; // planned, or no platform creds
-                    }
-
-                    $bal = rescue(fn () => $gateways->gateway($rail, $user)->balance(), null, report: false);
-                    if ($bal === null || ($bal['state'] ?? null) !== 'ok') {
-                        continue; // rail not connected / unreadable for this business
-                    }
-
-                    $demo = $bal['demo'] ?? false;
-                    $out[] = [
-                        'rail' => $rail,
-                        'provider' => $meta['provider'],
-                        'method' => $meta['method'],
-                        // In demo/fake mode every rail reports the same stub figure;
-                        // label each in its own currency so the tiles read sensibly.
-                        'currency' => $demo ? $meta['currency'] : ($bal['currency'] ?? $meta['currency']),
-                        'available' => $bal['available'] ?? null,
-                        'demo' => $demo,
-                    ];
-                }
-
-                return $out;
-            },
-        );
-
-        return response()->json([
-            'balances' => $balances,
-            'reconciled' => $reconciled,
-        ]);
-    }
-
     /** Add an invoice from the dashboard — a file upload or a quick manual entry. */
     public function store(Request $request, PayablesOrchestrator $orchestrator)
     {
@@ -211,14 +148,6 @@ class DashboardController extends Controller
             // Local dev disk can't sign — stream it through the app instead.
             return Storage::download($invoice->file_path, $invoice->original_filename);
         }
-    }
-
-    public function approve(Request $request, Invoice $invoice, PayablesOrchestrator $orchestrator)
-    {
-        $this->authorizeOwner($request, $invoice);
-        $orchestrator->approve($invoice, $request->user());
-
-        return back()->with('status', 'Approved & paid.');
     }
 
     public function hold(Request $request, Invoice $invoice, PayablesOrchestrator $orchestrator)

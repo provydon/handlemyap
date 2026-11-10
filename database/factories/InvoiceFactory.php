@@ -6,7 +6,7 @@ use App\Models\Invoice;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<\App\Models\Invoice> */
+/** @extends Factory<Invoice> */
 class InvoiceFactory extends Factory
 {
     public function definition(): array

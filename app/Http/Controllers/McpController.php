@@ -16,9 +16,8 @@ use Throwable;
  * Model Context Protocol over streamable HTTP (POST /mcp).
  *
  * Every tool is a thin caller of PayablesOrchestrator — the exact same core the
- * REST API and the dashboard use — so an AI agent gets identical, rule-gated
- * behaviour: AI reads the invoice, a deterministic rule engine decides auto-pay
- * vs. human review, and ACH moves the money.
+ * REST API and the dashboard use — so an AI agent gets identical behaviour: AI
+ * reads the invoice and queues it, where a human pays the vendor with PayPal.
  *
  * Auth: the same Sanctum bearer tokens issued in Settings. Every call is scoped
  * to the token's user, so an agent can only ever see or act on its own payables.
@@ -71,7 +70,7 @@ class McpController extends Controller
     {
         return response()->json([
             'name' => 'handlemyap',
-            'description' => 'HandlemyAP MCP server — submit invoices, let AI read them and your rules pay them by bank transfer (ACH).',
+            'description' => 'HandlemyAP MCP server — submit invoices and let AI read and queue them for payment with PayPal.',
             'transport' => 'streamable-http (JSON-RPC 2.0 over POST)',
             'endpoint' => url('/mcp'),
             'auth' => 'Authorization: Bearer <HandlemyAP API token>  (create one in Settings)',
@@ -90,13 +89,12 @@ class McpController extends Controller
             'capabilities' => ['tools' => ['listChanged' => false]],
             'serverInfo' => [
                 'name' => 'handlemyap',
-                'title' => 'HandlemyAP — AI accounts payable, paid by bank transfer (ACH)',
+                'title' => 'HandlemyAP — AI accounts payable, paid with PayPal',
                 'version' => '1.0.0',
             ],
-            'instructions' => 'Submit vendor invoices and HandlemyAP reads them with AI, applies the '
-                .'account owner\'s auto-approval rules, and pays the vendor via ACH. '
-                .'Anything outside the rules is parked for a human. Use submit_invoice to add a '
-                .'payable, list_invoices to see the queue, and approve_invoice to release a parked one.',
+            'instructions' => 'Submit vendor invoices and HandlemyAP reads them with AI and queues them '
+                .'for review. A human pays each vendor with PayPal from the dashboard. Use submit_invoice '
+                .'to add a payable, list_invoices to see the queue, and list_payouts to see what has been paid.',
         ];
     }
 
@@ -106,8 +104,8 @@ class McpController extends Controller
         return [
             [
                 'name' => 'submit_invoice',
-                'description' => 'Submit a vendor invoice as a payable. AI/normalisation runs, then the owner\'s '
-                    .'rules decide: it is either auto-approved and paid by bank transfer (ACH), or parked for human review. '
+                'description' => 'Submit a vendor invoice as a payable. AI/normalisation runs and the invoice is '
+                    .'queued for review, to be paid with PayPal from the dashboard. '
                     .'Pass external_ref (an idempotency key) to make retries safe.',
                 'inputSchema' => [
                     'type' => 'object',
@@ -117,7 +115,7 @@ class McpController extends Controller
                         'amount' => ['type' => 'number', 'description' => 'Invoice total.'],
                         'currency' => ['type' => 'string', 'description' => '3-letter ISO currency (default USD).'],
                         'invoice_number' => ['type' => 'string', 'description' => 'The vendor\'s invoice number.'],
-                        'due_date' => ['type' => 'string', 'description' => 'Due date (YYYY-MM-DD). If future, payment is scheduled.'],
+                        'due_date' => ['type' => 'string', 'description' => 'The invoice due date (YYYY-MM-DD).'],
                         'external_ref' => ['type' => 'string', 'description' => 'Your idempotency key, e.g. order:12345:payment.'],
                     ],
                     'required' => ['vendor_name', 'amount'],
@@ -126,7 +124,7 @@ class McpController extends Controller
             [
                 'name' => 'list_invoices',
                 'description' => 'List payables in the queue, newest first. Optionally filter by status '
-                    .'(received, needs_review, scheduled, paying, paid, held, rejected, failed).',
+                    .'(received, needs_review, paid, held, rejected).',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => [
@@ -145,18 +143,8 @@ class McpController extends Controller
                 ],
             ],
             [
-                'name' => 'approve_invoice',
-                'description' => 'Approve a parked (needs_review) invoice. Releases the ACH payout now, or '
-                    .'schedules it for the due date. Use this for a human-in-the-loop approval step.',
-                'inputSchema' => [
-                    'type' => 'object',
-                    'properties' => ['id' => ['type' => 'string', 'description' => 'The invoice id to approve.']],
-                    'required' => ['id'],
-                ],
-            ],
-            [
                 'name' => 'list_payouts',
-                'description' => 'List ACH payouts, newest first, with their settlement status.',
+                'description' => 'List payouts, newest first, with their settlement status.',
                 'inputSchema' => [
                     'type' => 'object',
                     'properties' => ['limit' => ['type' => 'integer', 'description' => 'Max rows (default 25, max 100).']],
@@ -175,7 +163,6 @@ class McpController extends Controller
                 'submit_invoice' => $this->submitInvoice($user, $args, $orchestrator),
                 'list_invoices' => $this->listInvoices($user, $args),
                 'get_invoice' => $this->getInvoice($user, $args),
-                'approve_invoice' => $this->approveInvoice($user, $args, $orchestrator),
                 'list_payouts' => $this->listPayouts($user, $args),
                 default => throw new \InvalidArgumentException("Unknown tool: {$name}"),
             };
@@ -241,14 +228,6 @@ class McpController extends Controller
         return $this->summarize($invoice, withPayouts: true);
     }
 
-    private function approveInvoice(User $user, array $args, PayablesOrchestrator $orchestrator): array
-    {
-        $invoice = $user->invoices()->findOrFail($args['id'] ?? '');
-        $orchestrator->approve($invoice, $user);
-
-        return $this->summarize($invoice->refresh()->load(['vendor', 'payouts']), withPayouts: true);
-    }
-
     private function listPayouts(User $user, array $args): array
     {
         $limit = min(max((int) ($args['limit'] ?? 25), 1), 100);
@@ -305,13 +284,10 @@ class McpController extends Controller
         $reasons = implode('; ', $invoice->review_reasons ?? []);
 
         return match ($invoice->status) {
-            Invoice::STATUS_PAID => 'Auto-approved and paid by bank transfer (ACH).',
-            Invoice::STATUS_PAYING => 'Auto-approved — ACH payout in progress.',
-            Invoice::STATUS_SCHEDULED => 'Approved — scheduled to pay via ACH on the due date.',
-            Invoice::STATUS_NEEDS_REVIEW => 'Parked for human review'.($reasons ? ": {$reasons}" : '.'),
+            Invoice::STATUS_PAID => 'Paid with PayPal.',
+            Invoice::STATUS_NEEDS_REVIEW => 'Waiting in the queue to be paid'.($reasons ? ": {$reasons}" : '.'),
             Invoice::STATUS_HELD => 'Held by a human.',
             Invoice::STATUS_REJECTED => 'Rejected by a human.',
-            Invoice::STATUS_FAILED => 'Payout failed — see the invoice for details.',
             default => 'Received.',
         };
     }

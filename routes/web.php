@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IntakeController;
+use App\Http\Controllers\InvoicePaymentController;
 use App\Http\Controllers\McpController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\VendorController;
@@ -34,25 +35,24 @@ Route::middleware('auth')->group(function () {
     Route::get('/app', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/summary', [DashboardController::class, 'summary']);
     Route::get('/app/queue', [DashboardController::class, 'queue']);
-    Route::get('/app/balance', [DashboardController::class, 'balance']);
     Route::post('/app/invoices', [DashboardController::class, 'store']);
     Route::get('/app/invoices/{invoice}/file', [DashboardController::class, 'file'])->name('invoice.file');
-    Route::post('/app/invoices/{invoice}/approve', [DashboardController::class, 'approve']);
     Route::post('/app/invoices/{invoice}/hold', [DashboardController::class, 'hold']);
     Route::post('/app/invoices/{invoice}/reject', [DashboardController::class, 'reject']);
 
+    // Pay with PayPal (Checkout / Orders v2) — start → approve at PayPal → return/capture.
+    Route::post('/app/invoices/{invoice}/pay/paypal', [InvoicePaymentController::class, 'start'])->name('invoice.pay.start');
+    Route::post('/app/invoices/{invoice}/pay/paypal/order', [InvoicePaymentController::class, 'order'])->name('invoice.pay.order');
+    Route::post('/app/invoices/{invoice}/pay/paypal/capture', [InvoicePaymentController::class, 'capture'])->name('invoice.pay.capture');
+    Route::get('/app/invoices/{invoice}/pay/paypal/return', [InvoicePaymentController::class, 'return'])->name('invoice.pay.return');
+    Route::get('/app/invoices/{invoice}/pay/paypal/cancel', [InvoicePaymentController::class, 'cancel'])->name('invoice.pay.cancel');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/rules', [SettingsController::class, 'updateRule']);
     Route::post('/settings/handle', [SettingsController::class, 'updateHandle']);
     Route::post('/settings/currency', [SettingsController::class, 'updateCurrency']);
-    Route::post('/settings/payout-routes', [SettingsController::class, 'updatePayoutRoutes']);
     Route::get('/app/vendors', [VendorController::class, 'index'])->name('vendors');
     Route::post('/app/vendors/{vendor}/bank', [VendorController::class, 'storeBank']);
 
-    Route::post('/settings/bank/connect', [SettingsController::class, 'connectBank']);
-    Route::post('/settings/bank/disconnect', [SettingsController::class, 'disconnectBank']);
-    Route::post('/settings/bank/plaid/link-token', [SettingsController::class, 'plaidLinkToken']);
-    Route::post('/settings/bank/plaid/connect', [SettingsController::class, 'connectBankPlaid']);
     Route::post('/settings/tokens', [SettingsController::class, 'createToken']);
     Route::delete('/settings/tokens/{id}', [SettingsController::class, 'deleteToken']);
 });

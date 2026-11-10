@@ -4,13 +4,16 @@
 
 @php($me = auth()->user())
 @php($intake = url('/u/'.$me->handle))
+@php($paypalClientId = config('handlemyap.paypal.client_id'))
+{{-- Smart-button popup is available when a live PayPal app is configured and we're not forced offline. --}}
+@php($paypalEnabled = filled($paypalClientId) && config('handlemyap.gateway') !== 'fake')
 
 {{-- Header: title on the left, a compact intake-link widget on the right
      (no longer a full-width banner, but still front-and-centre). --}}
 <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
     <div>
         <h1 class="text-xl font-semibold text-slate-900">Payables</h1>
-        <p class="text-sm text-slate-500 max-w-xl">Vendors send invoices to your link — HandlemyAP reads each one, pays by bank transfer (ACH) under your rules, and flags anything off for you to review.</p>
+        <p class="text-sm text-slate-500 max-w-xl">Vendors send invoices to your link — HandlemyAP reads and sorts each one, then you pay it with PayPal in a tap.</p>
     </div>
     <div class="shrink-0 rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm">
         <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Your invoice intake link</div>
@@ -23,30 +26,8 @@
     </div>
 </div>
 
-{{-- Connect a bank — shown until the business links an ACH funding source --}}
-@unless ($me->dwollaConnected())
-<div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="flex items-start gap-3">
-            <div class="h-11 w-11 rounded-xl bg-amber-400 text-white flex items-center justify-center shrink-0">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 0 0-2.25-2.25H15a3 3 0 1 1-6 0H5.25A2.25 2.25 0 0 0 3 12m18 0v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 18v-6m18 0V9a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 9v3"/></svg>
-            </div>
-            <div>
-                <div class="font-medium text-amber-900">Connect a bank to start paying</div>
-                <p class="text-sm text-amber-800/90 mt-0.5">Invoices are paid by ACH from your own bank. Until you connect it, approved invoices just wait in review.</p>
-            </div>
-        </div>
-        <a href="{{ url('/settings') }}?tab=bank" class="shrink-0 rounded-full bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 text-sm font-medium text-center shadow-sm">Connect bank</a>
-    </div>
-</div>
-@endunless
-
-{{-- Per-rail balances — one chip per funded rail (USD via Dwolla, NGN via
-     Paystack, …). Populated async from /app/balance; hidden until it loads. --}}
-<div id="balances" class="hidden flex-wrap items-center gap-3 mb-6"></div>
-
 {{-- Metrics --}}
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
     {{-- Needs review --}}
     <div onclick="filterStatus('needs_review')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
         <div class="text-sm font-bold text-slate-700">Needs review</div>
@@ -57,19 +38,6 @@
             <div class="ml-3 min-w-0">
                 <div class="text-4xl font-semibold leading-none text-slate-900" data-stat="needs_review">—</div>
                 <div class="text-xs text-slate-400 mt-1 truncate" data-substat="needs_review"></div>
-            </div>
-        </div>
-    </div>
-    {{-- Scheduled --}}
-    <div onclick="filterStatus('scheduled')" class="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md">
-        <div class="text-sm font-bold text-slate-700">Scheduled</div>
-        <div class="flex items-center mt-3">
-            <div class="h-14 w-14 rounded-xl text-white flex items-center justify-center bg-sky-500 shrink-0">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
-            </div>
-            <div class="ml-3 min-w-0">
-                <div class="text-4xl font-semibold leading-none text-slate-900" data-stat="scheduled">—</div>
-                <div class="text-xs text-slate-400 mt-1 truncate" data-substat="scheduled"></div>
             </div>
         </div>
     </div>
@@ -140,12 +108,9 @@
             <select id="f-status" aria-label="Filter by status" class="hma-select rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
                 <option value="">All statuses</option>
                 <option value="needs_review">Needs review</option>
-                <option value="scheduled">Scheduled</option>
-                <option value="paying">Paying</option>
                 <option value="paid">Paid</option>
                 <option value="held">Held</option>
                 <option value="rejected">Rejected</option>
-                <option value="failed">Failed</option>
             </select>
             <select id="f-source" aria-label="Filter by source" class="hma-select rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 focus:outline-none">
                 <option value="">All sources</option>
@@ -178,10 +143,29 @@
         padding-right: 2.25rem;
     }
 </style>
+{{-- Pay-with-PayPal popup: the PayPal window opens over this, no page leave --}}
+<div id="pp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-slate-900/40" onclick="closePayModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div class="flex items-center justify-between mb-1">
+            <h3 class="font-semibold text-slate-900">Pay with PayPal</h3>
+            <button onclick="closePayModal()" aria-label="Close" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <p id="pp-summary" class="text-sm text-slate-500 mb-5"></p>
+        <div id="paypal-buttons"></div>
+        <p id="pp-status" class="mt-3 text-sm text-center text-slate-500"></p>
+        <p class="mt-3 text-[11px] text-slate-400 text-center">A PayPal window opens — log in and approve. You won't leave this page.</p>
+    </div>
+</div>
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-grid.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/styles/ag-theme-quartz.css">
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.2.0/dist/ag-grid-community.min.js"></script>
+@if ($paypalEnabled)
+<script src="https://www.paypal.com/sdk/js?client-id={{ $paypalClientId }}&currency=USD&intent=capture&components=buttons"></script>
+@endif
 <script>
+const PAYPAL_ENABLED = @json($paypalEnabled);
 function copyIntake(btn) {
     const input = document.getElementById('intake-url');
     const prev = btn.textContent;
@@ -230,15 +214,95 @@ async function submitAction(id, verb) {
 async function onAction(id, sel) {
     const verb = sel.value;
     if (!verb) return;
+    if (verb === 'pay_paypal') { sel.value = ''; startPayPal(id); return; }
     sel.disabled = true;
     await submitAction(id, verb);   // load() re-renders the grid, replacing this cell
 }
+
+// Smart-button popup when a live PayPal app is configured; otherwise the
+// full-page POST (which the server simulates in demo mode).
+function startPayPal(id) {
+    if (PAYPAL_ENABLED && window.paypal) openPayModal(id);
+    else payWithPayPal(id);
+}
+
+let ppInvoiceId = null;
+let ppButtons = null;
+
+function openPayModal(id) {
+    ppInvoiceId = id;
+    const inv = allInvoices.find(r => r.id === id);
+    document.getElementById('pp-summary').textContent = inv
+        ? `${inv.vendor || 'Vendor'} · ${inv.invoice_number || ''} · ${money(inv.amount, inv.currency || 'USD')}`
+        : `Invoice #${id}`;
+    ppSay('');
+    document.getElementById('pp-modal').classList.remove('hidden');
+    renderPayPalButtons();
+}
+
+function closePayModal() {
+    document.getElementById('pp-modal').classList.add('hidden');
+    ppInvoiceId = null;
+}
+
+function ppSay(msg, err) {
+    const el = document.getElementById('pp-status');
+    if (el) { el.textContent = msg; el.className = 'mt-3 text-sm text-center ' + (err ? 'text-rose-600' : 'text-slate-500'); }
+}
+
+function renderPayPalButtons() {
+    const container = document.getElementById('paypal-buttons');
+    container.innerHTML = '';
+    ppButtons = paypal.Buttons({
+        style: { layout: 'vertical', color: 'blue', shape: 'pill', label: 'paypal', height: 44 },
+        createOrder: async () => {
+            const res = await fetch(`/app/invoices/${ppInvoiceId}/pay/paypal/order`, {
+                method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            });
+            const d = await res.json();
+            if (!res.ok) { ppSay(d.message || 'Could not start payment.', true); throw new Error(d.message || 'order failed'); }
+            return d.id;
+        },
+        onApprove: async (data) => {
+            ppSay('Finishing payment…');
+            const res = await fetch(`/app/invoices/${ppInvoiceId}/pay/paypal/capture`, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+                body: JSON.stringify({ order_id: data.orderID }),
+            });
+            const d = await res.json();
+            if (res.ok && d.ok) {
+                ppSay('Paid ✓');
+                setTimeout(async () => { closePayModal(); await load(); }, 800);
+            } else {
+                ppSay(d.message || 'Payment could not be completed.', true);
+            }
+        },
+        onCancel: () => ppSay('Payment canceled.'),
+        onError: () => ppSay('PayPal error — please retry.', true),
+    });
+    ppButtons.render('#paypal-buttons');
+}
+
+// Fallback: a full-page POST so the server can send the browser on to PayPal's
+// approve page (or, in demo mode, straight back with a "paid" flash).
+function payWithPayPal(id) {
+    const f = document.createElement('form');
+    f.method = 'POST';
+    f.action = `/app/invoices/${id}/pay/paypal`;
+    const t = document.createElement('input');
+    t.type = 'hidden'; t.name = '_token'; t.value = CSRF;
+    f.appendChild(t);
+    document.body.appendChild(f);
+    f.submit();
+}
+
 function actionMenu(id, status) {
     if (!ACTIONABLE.includes(status)) return '<span class="text-slate-300 text-xs">—</span>';
     return `<select onchange="onAction(${id}, this)" aria-label="Invoice actions"
             class="hma-select rounded-full border border-slate-300 bg-white pl-3 py-1 text-xs text-slate-700 hover:bg-slate-50 focus:outline-none">
         <option value="">Actions</option>
-        <option value="approve">Approve &amp; pay</option>
+        <option value="pay_paypal">Pay with PayPal</option>
         <option value="hold">Hold</option>
         <option value="reject">Reject</option>
     </select>`;
@@ -251,8 +315,7 @@ const setStat = (k, v) => { const el = document.querySelector(`[data-stat="${k}"
 const subStat = (k, v) => { const el = document.querySelector(`[data-substat="${k}"]`); if (el) el.textContent = v; };
 
 function renderStats(stats) {
-    setStat('needs_review', stats.needs_review); subStat('needs_review', money(stats.needs_review_amount, 'USD') + ' pending');
-    setStat('scheduled', stats.scheduled);       subStat('scheduled', money(stats.scheduled_amount, 'USD') + ' scheduled');
+    setStat('needs_review', stats.needs_review); subStat('needs_review', money(stats.needs_review_amount, 'USD') + ' to pay');
     setStat('paid', stats.paid);                 subStat('paid', money(stats.paid_amount, 'USD') + ' paid');
 }
 
@@ -357,38 +420,9 @@ async function loadSummary() {
     populateCurrencies(data.currencies);
 }
 
-// Slow path: reconcile payout settlements with the rail, after the grid is up.
-// If anything settled (scheduled → paid), refresh the affected views.
-async function syncSettlements() {
-    try {
-        const res = await fetch('/app/balance');
-        const data = await res.json();
-        renderBalances(data.balances);
-        if (data.reconciled > 0) await Promise.all([loadSummary(), fetchQueue({ reset: true })]);
-    } catch (e) { /* non-fatal: statuses just refresh on next load */ }
-}
-
-// One chip per funded rail — label, amount in that rail's own currency.
-function renderBalances(list) {
-    const el = document.getElementById('balances');
-    if (!el) return;
-    if (!list || !list.length) { el.classList.add('hidden'); return; }
-    el.classList.remove('hidden'); el.classList.add('flex');
-    el.innerHTML = '<span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Balance</span>' +
-        list.map(b => {
-            const amt = b.available == null ? '—' : money(b.available, b.currency);
-            const demo = b.demo ? '<span class="text-[10px] uppercase tracking-wide text-slate-400">demo</span>' : '';
-            return `<div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 shadow-sm">
-                <span class="text-sm font-semibold text-slate-900">${amt}</span>
-                <span class="text-[11px] text-slate-400">${b.currency} · ${b.provider}</span>${demo}
-            </div>`;
-        }).join('');
-}
-
 async function load() {
     initGrid();
     await Promise.all([loadSummary(), fetchQueue({ reset: true })]); // cheap DB calls, in parallel
-    syncSettlements();                                               // async; grid already visible
 }
 
 function renderFallback(rows) {

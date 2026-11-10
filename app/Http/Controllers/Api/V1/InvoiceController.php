@@ -86,17 +86,6 @@ class InvoiceController extends Controller
         return response()->json($model->refresh()->load('vendor'));
     }
 
-    public function approve(Request $request, string $invoice, PayablesOrchestrator $orchestrator)
-    {
-        $model = $request->user()->invoices()->findOrFail($invoice);
-        $payout = $orchestrator->approve($model, $request->user());
-
-        return response()->json([
-            'invoice' => $model->refresh()->load('vendor'),
-            'payout' => $payout,
-        ]);
-    }
-
     public function hold(Request $request, string $invoice, PayablesOrchestrator $orchestrator)
     {
         $model = $request->user()->invoices()->findOrFail($invoice);

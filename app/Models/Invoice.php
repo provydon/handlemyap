@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\InvoiceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,19 +10,28 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
-    /** @use HasFactory<\Database\Factories\InvoiceFactory> */
+    /** @use HasFactory<InvoiceFactory> */
     use HasFactory;
 
     // Lifecycle
     public const STATUS_RECEIVED = 'received';       // just arrived, not yet read
+
     public const STATUS_EXTRACTING = 'extracting';   // AI is reading it
+
     public const STATUS_NEEDS_REVIEW = 'needs_review'; // waiting on a human
+
     public const STATUS_APPROVED = 'approved';       // cleared, queued to pay
+
     public const STATUS_SCHEDULED = 'scheduled';     // will pay on due date
+
     public const STATUS_PAYING = 'paying';           // payout in flight
+
     public const STATUS_PAID = 'paid';               // done
+
     public const STATUS_HELD = 'held';               // human parked it
+
     public const STATUS_REJECTED = 'rejected';       // human declined it
+
     public const STATUS_FAILED = 'failed';           // payout failed
 
     protected $fillable = [

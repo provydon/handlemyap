@@ -44,7 +44,7 @@ class ApiTest extends TestCase
         $this->assertSame(1, $user->invoices()->count());
     }
 
-    public function test_approve_triggers_a_payout(): void
+    public function test_submitted_invoice_waits_in_the_queue(): void
     {
         Sanctum::actingAs($user = User::factory()->create());
 
@@ -53,12 +53,9 @@ class ApiTest extends TestCase
             'amount' => 300, 'currency' => 'USD', 'due_date' => now()->toDateString(),
         ])->assertCreated()->json();
 
-        $this->assertSame(Invoice::STATUS_NEEDS_REVIEW, $create['status']); // no rule → review
-
-        $this->postJson("/api/v1/invoices/{$create['id']}/approve")
-            ->assertOk()
-            ->assertJsonPath('invoice.status', Invoice::STATUS_PAID)
-            ->assertJsonPath('payout.status', 'paid');
+        // Nothing is paid automatically — it waits to be paid with PayPal.
+        $this->assertSame(Invoice::STATUS_NEEDS_REVIEW, $create['status']);
+        $this->assertSame(0, $user->payouts()->count());
     }
 
     public function test_source_defaults_to_api_but_can_be_labelled(): void
@@ -142,6 +139,6 @@ class ApiTest extends TestCase
         Sanctum::actingAs(User::factory()->create());
 
         $this->getJson("/api/v1/invoices/{$invoice->id}")->assertNotFound();
-        $this->postJson("/api/v1/invoices/{$invoice->id}/approve")->assertNotFound();
+        $this->postJson("/api/v1/invoices/{$invoice->id}/hold")->assertNotFound();
     }
 }

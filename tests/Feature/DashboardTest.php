@@ -25,7 +25,6 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertJsonPath('stats.needs_review', 2)
             ->assertJsonPath('stats.paid', 1)
-            ->assertJsonPath('stats.scheduled', 0)
             ->assertJsonPath('currencies', ['NGN', 'USD']); // distinct, ordered
     }
 
@@ -35,21 +34,21 @@ class DashboardTest extends TestCase
 
         $this->actingAs($user)->get('/app')->assertOk()->assertSee('Payables');
         $this->actingAs($user)->get('/settings')->assertOk()
-            ->assertSee('Bank for ACH payouts')      // connect card renders
-            ->assertSee('Default currency');
+            ->assertSee('Default currency')
+            ->assertSee('API tokens');
     }
 
     public function test_settings_tab_is_selectable_by_query_param(): void
     {
         $user = User::factory()->create();
 
-        // Default: the intake tab is active, Bank panel is hidden.
+        // Default: the intake tab is active, Currency panel is hidden.
         $this->actingAs($user)->get('/settings')
-            ->assertSee('data-panel="bank" class="hidden"', false);
+            ->assertSee('data-panel="currency" class="hidden"', false);
 
-        // ?tab=bank deep-links straight to the Bank panel (not hidden).
-        $this->actingAs($user)->get('/settings?tab=bank')
-            ->assertSee('data-panel="bank" class=""', false)
+        // ?tab=currency deep-links straight to the Currency panel (not hidden).
+        $this->actingAs($user)->get('/settings?tab=currency')
+            ->assertSee('data-panel="currency" class=""', false)
             ->assertSee('data-panel="intake" class="hidden"', false);
     }
 

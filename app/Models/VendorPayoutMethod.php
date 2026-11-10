@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * A vendor's payout destination on ONE rail. Destinations are per-rail because
- * each provider identifies a bank differently — a Dwolla funding-source id, a
+ * each provider identifies a destination differently — a PayPal email, a
  * Paystack recipient code — so a vendor can hold several (one per country/rail
  * they're paid on). `recipient_ref` is the provider's destination id the gateway
  * sends to; `details` keeps display info (bank name, masked account).

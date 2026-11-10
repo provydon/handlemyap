@@ -1,0 +1,16 @@
+{
+  "vendor": "ACME Studio LLC",
+  "paypal_email": "billing@acmestudio.example",
+  "invoice_number": "ACM-2026-0412",
+  "issue_date": "2026-11-03",
+  "due_date": "2026-11-17",
+  "po_ref": "PO-5590",
+  "currency": "USD",
+  "amount": 4560.00,
+  "line_items": [
+    { "description": "Brand design sprint", "qty": 1, "unit_price": 2400.00, "amount": 2400.00 },
+    { "description": "Landing page (3 variants)", "qty": 3, "unit_price": 600.00, "amount": 1800.00 },
+    { "description": "Icon set", "qty": 40, "unit_price": 9.00, "amount": 360.00 }
+  ],
+  "notes": "Pay via PayPal to billing@acmestudio.example"
+}

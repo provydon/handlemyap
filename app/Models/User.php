@@ -5,7 +5,6 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -22,18 +21,7 @@ class User extends Authenticatable
         'password',
         'handle',
         'default_currency',
-        'payout_routes',
-        'dwolla_customer_id',
-        'dwolla_funding_source_id',
-        'dwolla_bank_name',
-        'dwolla_connected_at',
     ];
-
-    /** True once the business has connected a bank funding source for ACH payouts. */
-    public function dwollaConnected(): bool
-    {
-        return filled($this->dwolla_funding_source_id);
-    }
 
     /** A unique public intake handle derived from $base (name or email). */
     public static function makeHandle(string $base): string
@@ -58,8 +46,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'payout_routes' => 'array',
-            'dwolla_connected_at' => 'datetime',
         ];
     }
 
@@ -79,11 +65,5 @@ class User extends Authenticatable
     public function payouts(): HasMany
     {
         return $this->hasMany(Payout::class);
-    }
-
-    /** @return HasOne<AutoApprovalRule, $this> */
-    public function autoApprovalRule(): HasOne
-    {
-        return $this->hasOne(AutoApprovalRule::class);
     }
 }
