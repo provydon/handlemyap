@@ -6,8 +6,9 @@ cd /app
 mkdir -p database
 touch database/database.sqlite
 
-# Use the public URL Render assigns, so generated links / PayPal return URLs are correct.
-if [ -n "$RENDER_EXTERNAL_URL" ]; then
+# Canonical URL for generated links / PayPal return URLs. Prefer an explicitly
+# configured APP_URL (e.g. the custom domain); fall back to the URL Render assigns.
+if [ -z "$APP_URL" ] && [ -n "$RENDER_EXTERNAL_URL" ]; then
     export APP_URL="$RENDER_EXTERNAL_URL"
 fi
 
