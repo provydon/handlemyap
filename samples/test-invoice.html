@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; color: #1f2937; margin: 0; }
+  .sheet { width: 210mm; min-height: 297mm; padding: 22mm 20mm; }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand { font-size: 22px; font-weight: 700; color: #0f766e; letter-spacing: -0.5px; }
+  .brand small { display:block; font-size: 11px; font-weight: 500; color:#6b7280; margin-top:2px; }
+  .inv-label { text-align: right; }
+  .inv-label h1 { margin: 0; font-size: 28px; letter-spacing: 4px; color:#111827; }
+  .inv-label .num { color:#6b7280; font-size: 13px; margin-top: 4px; }
+  .meta { display: flex; justify-content: space-between; margin-top: 34px; font-size: 13px; }
+  .meta .block { line-height: 1.7; }
+  .meta .block .h { text-transform: uppercase; font-size: 10px; letter-spacing: 1px; color:#9ca3af; margin-bottom: 4px; }
+  .meta .block strong { display:block; font-size: 14px; color:#111827; }
+  table { width: 100%; border-collapse: collapse; margin-top: 34px; font-size: 13px; }
+  th { text-align: left; border-bottom: 2px solid #0f766e; padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color:#374151; }
+  th.r, td.r { text-align: right; }
+  td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+  .totals { margin-top: 18px; width: 260px; margin-left: auto; font-size: 13px; }
+  .totals .row { display:flex; justify-content: space-between; padding: 6px 10px; }
+  .totals .grand { border-top: 2px solid #111827; margin-top: 6px; padding-top: 10px; font-size: 16px; font-weight: 700; }
+  .pay { margin-top: 36px; background:#f0fdfa; border:1px solid #99f6e4; border-radius: 10px; padding: 16px 18px; font-size: 13px; }
+  .pay .h { font-weight: 700; color:#0f766e; margin-bottom: 4px; }
+  .foot { margin-top: 40px; font-size: 12px; color:#9ca3af; border-top: 1px solid #e5e7eb; padding-top: 14px; }
+</style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="top">
+      <div>
+        <div class="brand">Blue Harbor Creative Co.
+          <small>Studio 4, 118 Wharf Road · Portland, OR 97204</small>
+        </div>
+      </div>
+      <div class="inv-label">
+        <h1>INVOICE</h1>
+        <div class="num">BHC-2026-0477</div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="block">
+        <div class="h">Billed to</div>
+        <strong>HandlemyAP Demo Workspace</strong>
+        accounts@handlemyap.test
+      </div>
+      <div class="block">
+        <div class="h">Invoice date</div>
+        <strong>November 11, 2026</strong>
+        <div class="h" style="margin-top:12px;">Due date</div>
+        <strong>November 25, 2026</strong>
+      </div>
+      <div class="block">
+        <div class="h">PO reference</div>
+        <strong>PO-7741</strong>
+        <div class="h" style="margin-top:12px;">Currency</div>
+        <strong>USD</strong>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="r">Qty</th>
+          <th class="r">Unit price</th>
+          <th class="r">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Product photography — autumn catalog</td><td class="r">1</td><td class="r">$1,850.00</td><td class="r">$1,850.00</td></tr>
+        <tr><td>Retouching &amp; color grading (per image)</td><td class="r">36</td><td class="r">$22.00</td><td class="r">$792.00</td></tr>
+        <tr><td>Usage license — web &amp; social, 12 months</td><td class="r">1</td><td class="r">$640.00</td><td class="r">$640.00</td></tr>
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>$3,282.00</span></div>
+      <div class="row"><span>Tax (0%)</span><span>$0.00</span></div>
+      <div class="row grand"><span>Total due</span><span>USD $3,282.00</span></div>
+    </div>
+
+    <div class="pay">
+      <div class="h">Payment</div>
+      Please pay via <strong>PayPal</strong> to <strong>pay@blueharbor.example</strong>.<br>
+      Reference BHC-2026-0477 with your payment. Thank you!
+    </div>
+
+    <div class="foot">
+      Blue Harbor Creative Co. · pay@blueharbor.example · (503) 555-0147 · Terms: net 14 days
+    </div>
+  </div>
+</body>
+</html>

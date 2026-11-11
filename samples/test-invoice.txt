@@ -1,0 +1,23 @@
+INVOICE
+
+Vendor:       Blue Harbor Creative Co.
+Email:        pay@blueharbor.example
+Invoice no:   BHC-2026-0477
+Invoice date: 2026-11-11
+Due date:     2026-11-25
+PO number:    PO-7741
+Bill to:      HandlemyAP Demo Workspace
+
+------------------------------------------------------------
+Description                           Qty   Unit price   Amount
+------------------------------------------------------------
+Product photography — autumn catalog    1    1,850.00   1,850.00
+Retouching & color grading (per image) 36       22.00     792.00
+Usage license — web & social, 12 mo     1      640.00     640.00
+------------------------------------------------------------
+                                        Subtotal        3,282.00
+                                        Tax (0%)            0.00
+Total due:  USD 3,282.00
+
+Payment: please pay via PayPal to pay@blueharbor.example
+Reference BHC-2026-0477 with your payment. Thank you!

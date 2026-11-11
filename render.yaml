@@ -5,9 +5,15 @@ services:
     name: handlemyap
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: free
+    plan: starter
     region: frankfurt
     autoDeploy: true
+    # Persistent disk: the SQLite database and uploaded invoice files live here,
+    # so data survives deploys and restarts. (Requires a paid plan.)
+    disk:
+      name: handlemyap-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: APP_KEY
         generateValue: true
@@ -15,6 +21,11 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
+      # Point the database and uploads at the persistent disk.
+      - key: DB_DATABASE
+        value: /data/database.sqlite
+      - key: FILESYSTEM_LOCAL_ROOT
+        value: /data/storage/private
       - key: HANDLEMYAP_GATEWAY
         value: auto
       - key: HANDLEMYAP_EXTRACTOR
