@@ -62,13 +62,13 @@
 {{-- How it works --}}
 <section id="how" class="max-w-6xl mx-auto px-5 py-16">
     <h2 class="text-center text-2xl font-bold text-slate-900">How it works</h2>
-    <p class="text-center text-slate-500 mt-2">AI does the hard part — reading the document. You stay in control of every payment.</p>
+    <p class="text-center text-slate-500 mt-2">AI reads every invoice. You approve every payment.</p>
     <div class="grid md:grid-cols-4 gap-4 mt-10">
         @foreach ([
-            ['1', 'Share your link', 'Vendors submit invoices to your intake link — no login. Or add them by upload, REST API or MCP.'],
-            ['2', 'AI reads them', 'Vendor, amount, currency, due date, line items — even the pay-to PayPal address. Normalised, with a confidence score, from any layout.'],
-            ['3', 'Review the queue', 'Every invoice lands in one clean queue. Scan it, sort it, hold or reject anything that looks off.'],
-            ['4', 'Pay with PayPal', 'Tap Pay with PayPal, approve in the PayPal popup, and the vendor is paid. You never leave the dashboard.'],
+            ['1', 'Share your link', 'Vendors submit invoices to your link — no login. Or add them by upload, API or MCP.'],
+            ['2', 'AI reads them', 'Vendor, amount, currency, due date, line items, even the pay-to PayPal address — from any layout, with a confidence score.'],
+            ['3', 'Review the queue', 'Every invoice lands in one sortable queue. Hold or reject anything that looks off.'],
+            ['4', 'Pay with PayPal', 'Tap Pay with PayPal, log in to your own PayPal, approve — the vendor is paid.'],
         ] as [$n, $t, $d])
         <div class="bg-white rounded-2xl border border-slate-200 p-5">
             <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-semibold text-sm">{{ $n }}</div>
@@ -84,12 +84,12 @@
     <div class="max-w-6xl mx-auto px-5 py-16">
         <div class="grid md:grid-cols-3 gap-5">
             @foreach ([
-                ['Vendors come to you', 'Share one intake link. Vendors submit invoices straight into your queue — no account, no more chasing email or WhatsApp attachments.'],
-                ['Reads any invoice', 'PDFs, scans, photos, odd layouts — the AI handles heterogeneous documents a template never could, and pulls out the pay-to PayPal address too.'],
-                ['One clean queue', 'Every bill in one place with what the AI read and how sure it was. Pay, hold or reject — your call, every time.'],
-                ['Pay with PayPal, in a tap', 'A PayPal popup opens right on the dashboard. You log in to your own PayPal and pay; the vendor is the payee and gets the money.'],
-                ['You hold the keys', 'Nothing is ever paid automatically. Every payment is a deliberate tap and a real PayPal approval — no surprises.'],
-                ['API & MCP first', 'Every action is a REST API call and an MCP tool, so other apps — and AI agents — embed HandlemyAP as their payables engine.'],
+                ['Vendors come to you', 'Share one link. Vendors submit invoices straight into your queue — no account needed.'],
+                ['Reads any invoice', 'PDFs, scans, photos, odd layouts — AI reads documents a template can’t, and grabs the pay-to PayPal address.'],
+                ['One clean queue', 'Every bill in one place, with the fields AI read and a confidence score. Pay, hold or reject.'],
+                ['Pay with PayPal', 'Tap to open PayPal checkout. You log in to your own PayPal and approve; the vendor is the payee and gets paid.'],
+                ['You hold the keys', 'Nothing is paid automatically. Every payment is a deliberate tap and a real PayPal approval.'],
+                ['API & MCP first', 'Every action is a REST API call and an MCP tool, so other apps and AI agents can drive it.'],
             ] as [$t, $d])
             <div class="bg-white rounded-2xl border border-slate-200 p-5">
                 <div class="font-semibold text-slate-900">{{ $t }}</div>
@@ -106,9 +106,9 @@
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Embed it in your app</h2>
             <p class="mt-3 text-slate-600">
-                Building a marketplace or platform that pays contractors? Don’t rebuild AP.
-                Submit a payable to HandlemyAP and it handles the AI extraction and lines the bill up in the queue —
-                ready to pay with PayPal. A notary-signing platform paying notaries, for example, plugs straight in.
+                Building a marketplace or platform that pays contractors? Submit a payable over REST or MCP —
+                HandlemyAP reads it with AI and queues it, ready to pay with PayPal. A notary-signing platform
+                paying notaries, for example, plugs straight in.
             </p>
             <ul class="mt-4 space-y-2 text-sm text-slate-600">
                 <li>✓ REST API <span class="text-slate-400">and</span> an MCP server — give an AI agent the tools directly</li>
@@ -140,15 +140,14 @@ curl -X POST https://handlemyap.com/api/v1/invoices \
             <h2 class="text-2xl sm:text-3xl font-bold">AI turns a pile of invoices into one-tap PayPal payments.</h2>
             <p class="mt-3 text-slate-300">
                 Most payment AI is about checkout — money <em>in</em>. HandlemyAP is the other side: paying the
-                bills. AI does the reading no template can, and PayPal does the paying — a real checkout where
-                <em>you</em> log in and approve, so the vendor gets paid and you stay in control.
+                bills. AI reads what no template can; PayPal does the paying, with you approving every payment.
             </p>
         </div>
         <div class="grid md:grid-cols-3 gap-5 mt-10">
             @foreach ([
-                ['Real PayPal checkout', 'Every bill is settled through PayPal Checkout — not a mock. You approve in the PayPal popup and the vendor is the payee, so the money goes to them.'],
-                ['A volume multiplier, not one app', 'Because it’s embeddable over API and MCP, every app that plugs in (a notary-signing platform, a marketplace) routes its payables through it too. One integration, many apps’ volume.'],
-                ['Responsible agentic payments', 'AI only reads the invoice — genuinely semantic work. A human authorises every payment with a real PayPal approval. An agent can file a bill, but it can never move the money on its own.'],
+                ['Real PayPal checkout', 'Every bill is settled through PayPal Checkout — not a mock. You approve in PayPal and the vendor is the payee, so the money goes to them.'],
+                ['Embeddable, not a silo', 'A REST API and an MCP server over the same core, so any app or AI agent can submit payables straight into the queue.'],
+                ['Responsible agentic payments', 'AI only reads the invoice. A human authorises every payment in PayPal — an agent can file a bill, but never move the money.'],
             ] as [$t, $d])
             <div class="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <div class="font-semibold">{{ $t }}</div>
