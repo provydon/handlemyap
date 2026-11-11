@@ -37,12 +37,11 @@
             🟦 Built with PayPal + AI
         </span>
         <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
-            Your vendors send the invoices. <span class="text-brand-600">AI reads, normalizes and organizes them in one view — you pay with PayPal.</span>
+            Your vendors send the invoices. <span class="text-brand-600">AI organizes them. You pay with PayPal.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
-            Share one link. Vendors send their invoices straight into your queue — any format.
-            HandlemyAP reads each one with AI and lines it up ready to pay. When you're ready,
-            hit <strong>Pay with PayPal</strong> — you log in to your own PayPal and the vendor gets paid.
+            Vendors send invoices to one link — any format. AI reads and organizes them into a single
+            queue, ready for you to <strong>Pay with PayPal</strong> in a tap.
         </p>
         <div class="mt-6 inline-flex items-center gap-2 text-sm">
             <span class="text-slate-400">Your intake link</span>
