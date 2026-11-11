@@ -2,16 +2,14 @@
 set -e
 cd /app
 
-# SQLite database path. In production DB_DATABASE points at a persistent Render
-# disk (e.g. /data/database.sqlite); for a plain `docker run` it falls back to
-# the image's ephemeral path. Create the directory + file if missing.
-DB_PATH="${DB_DATABASE:-/app/database/database.sqlite}"
-DB_DIR="$(dirname "$DB_PATH")"
-mkdir -p "$DB_DIR"
-[ -f "$DB_PATH" ] || touch "$DB_PATH"
-
-# Uploaded invoice files are stored in S3 (FILESYSTEM_DISK=s3), so nothing to
-# create on disk for them.
+# The production database is a remote PostgreSQL (dashboard data persists there);
+# uploaded invoice files go to S3. For a plain `docker run` the app falls back to
+# a local SQLite file, so create it when (and only when) SQLite is the driver.
+if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ]; then
+    DB_PATH="${DB_DATABASE:-/app/database/database.sqlite}"
+    mkdir -p "$(dirname "$DB_PATH")"
+    [ -f "$DB_PATH" ] || touch "$DB_PATH"
+fi
 
 # Canonical URL for generated links / PayPal return URLs. Prefer an explicitly
 # configured APP_URL (e.g. the custom domain); fall back to the URL Render assigns.
@@ -21,20 +19,18 @@ fi
 
 php artisan config:clear
 
-# Schema is always brought up to date (migrations are safe to re-run).
-php artisan migrate --force
-
-# Seed demo data ONLY on a fresh database. The sentinel lives next to the DB —
-# on the persistent disk in production — so once the data exists, reboots and
-# redeploys leave submitted invoices and payment state untouched. (On an
-# ephemeral `docker run` the sentinel is ephemeral too, so local always seeds.)
-if [ ! -f "$DB_DIR/.seeded" ]; then
+# Bring the schema up to date (safe to re-run) and remember whether anything ran.
+# Seed demo data ONLY on a fresh database: if migrations just created the tables
+# we seed once; on every later boot the persisted data is left untouched. This is
+# driver-agnostic, so it works the same on Postgres and SQLite.
+MIGRATE_OUT="$(php artisan migrate --force 2>&1)"
+echo "$MIGRATE_OUT"
+if echo "$MIGRATE_OUT" | grep -qi "Nothing to migrate"; then
+    echo "Existing database — skipping seed (data persisted)."
+else
     echo "Fresh database — seeding demo data."
     php artisan db:seed --force
     php artisan db:seed --class="Database\\Seeders\\DemoSeeder" --force
-    touch "$DB_DIR/.seeded"
-else
-    echo "Existing database — skipping seed (data persisted)."
 fi
 
 # Bake config + views for speed. (No route:cache — some routes use closures.)

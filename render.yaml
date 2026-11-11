@@ -8,12 +8,6 @@ services:
     plan: starter
     region: frankfurt
     autoDeploy: true
-    # Persistent disk for the SQLite database (uploaded files go to S3, below),
-    # so dashboard data survives deploys and restarts. (Requires a paid plan.)
-    disk:
-      name: handlemyap-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: APP_KEY
         generateValue: true
@@ -21,9 +15,21 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
-      # SQLite database on the persistent disk.
+      # Dashboard data lives in a remote PostgreSQL (the shared fikets DB server).
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: 46.101.248.141
+      - key: DB_PORT
+        value: "5432"
       - key: DB_DATABASE
-        value: /data/database.sqlite
+        value: handlemyap
+      - key: DB_USERNAME
+        value: handlemyap
+      - key: DB_SSLMODE
+        value: require
+      - key: DB_PASSWORD
+        sync: false
       # Uploaded invoice files live in S3 (the "handlemyap" bucket).
       - key: FILESYSTEM_DISK
         value: s3

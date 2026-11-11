@@ -2,10 +2,10 @@
 # No Node build: Tailwind, AG Grid and the PayPal JS SDK are all loaded from CDNs.
 FROM php:8.4-cli-bookworm
 
-# System libs + PHP extensions Laravel needs (SQLite, mbstring, zip, bcmath).
+# System libs + PHP extensions Laravel needs (SQLite + PostgreSQL, mbstring, zip, bcmath).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        git unzip libzip-dev libonig-dev libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite mbstring zip bcmath \
+        git unzip libzip-dev libonig-dev libsqlite3-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_sqlite pdo_pgsql mbstring zip bcmath \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Composer (copied from the official image).
