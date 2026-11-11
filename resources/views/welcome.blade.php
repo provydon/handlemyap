@@ -37,7 +37,7 @@
             🟦 Built with PayPal + AI
         </span>
         <h1 class="text-4xl sm:text-5xl font-bold tracking-tight text-slate-900 max-w-3xl mx-auto leading-tight">
-            Your vendors send the invoices. <span class="text-brand-600">AI reads them. You pay with PayPal.</span>
+            Your vendors send the invoices. <span class="text-brand-600">AI reads, normalizes and organizes them in one view — you pay with PayPal.</span>
         </h1>
         <p class="mt-5 text-lg text-slate-600 max-w-2xl mx-auto">
             Share one link. Vendors send their invoices straight into your queue — any format.
