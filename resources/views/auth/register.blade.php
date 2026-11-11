@@ -5,7 +5,7 @@
     <div class="w-full max-w-sm">
         <div class="text-center mb-6">
             <a href="/" class="inline-block text-2xl font-semibold text-slate-900">Handlemy<span class="text-brand-600">AP</span></a>
-            <p class="text-sm text-slate-500 mt-1">Your vendors send the invoices. AI helps you pay them by bank transfer (ACH).</p>
+            <p class="text-sm text-slate-500 mt-1">Your vendors send the invoices. AI reads them, you pay with PayPal.</p>
         </div>
         <form method="POST" action="/register" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
             @csrf

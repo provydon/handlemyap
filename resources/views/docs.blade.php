@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HandlemyAP — API & MCP docs</title>
-    <meta name="description" content="Embed HandlemyAP in your app: submit invoices over REST or MCP and let AI read them and your rules pay them by bank transfer (ACH).">
+    <meta name="description" content="Embed HandlemyAP in your app: submit invoices over REST or MCP, let AI read them, and pay each one with PayPal from the dashboard.">
     @include('partials.head')
 </head>
 <body class="bg-white text-slate-800 antialiased">
@@ -50,8 +50,8 @@
             <h1 class="text-3xl font-bold text-slate-900">API &amp; MCP docs</h1>
             <p class="mt-3 text-slate-600 max-w-2xl">
                 HandlemyAP is accounts payable as a service. Send it an invoice and it reads the document with
-                AI, applies the account owner’s auto-approval rules, and pays the vendor via <strong>ACH</strong> —
-                parking anything outside the rules for a human. Two ways to integrate:
+                AI, normalises it and lines it up in the owner’s queue — ready to be paid with
+                <strong>PayPal</strong> in a tap. Nothing is paid automatically. Two ways to integrate:
             </p>
             <div class="grid sm:grid-cols-2 gap-4 mt-6">
                 <div class="rounded-2xl border border-slate-200 p-5">
@@ -60,7 +60,7 @@
                 </div>
                 <div class="rounded-2xl border border-slate-200 p-5">
                     <div class="font-semibold text-slate-900">MCP server</div>
-                    <p class="text-sm text-slate-500 mt-1">Model Context Protocol. Point an AI agent (Claude, etc.) at it and it can submit and approve payables as tools.</p>
+                    <p class="text-sm text-slate-500 mt-1">Model Context Protocol. Point an AI agent (Claude, etc.) at it and it can submit and track payables as tools.</p>
                 </div>
             </div>
             <p class="mt-5 text-sm text-slate-500">
@@ -92,16 +92,15 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @foreach ([
-                            ['POST', '/api/v1/invoices', 'Submit a payable (JSON fields or a multipart file). Runs extraction + rules.'],
+                            ['POST', '/api/v1/invoices', 'Submit a payable (JSON fields or a multipart file). Runs AI extraction.'],
                             ['GET', '/api/v1/invoices', 'List your invoices, newest first.'],
-                            ['GET', '/api/v1/invoices/{id}', 'Fetch one invoice with its vendor and payouts.'],
-                            ['POST', '/api/v1/invoices/{id}/approve', 'Approve a parked invoice → pays or schedules the ACH payout.'],
+                            ['GET', '/api/v1/invoices/{id}', 'Fetch one invoice with its vendor and payments.'],
+                            ['POST', '/api/v1/invoices/{id}/extract', 'Run (or re-run) the AI read on an uploaded invoice.'],
                             ['POST', '/api/v1/invoices/{id}/hold', 'Park an invoice.'],
                             ['POST', '/api/v1/invoices/{id}/reject', 'Decline an invoice.'],
                             ['GET', '/api/v1/vendors', 'List vendors.'],
-                            ['GET', '/api/v1/payouts', 'List ACH payouts and their status.'],
-                            ['GET', '/api/v1/rules', 'Read your auto-approval rules.'],
-                            ['PUT', '/api/v1/rules', 'Update your auto-approval rules.'],
+                            ['POST', '/api/v1/vendors', 'Create or update a vendor.'],
+                            ['GET', '/api/v1/payouts', 'List PayPal payments and their status.'],
                         ] as [$m, $p, $d])
                         <tr>
                             <td class="px-4 py-2"><span class="font-mono text-xs font-semibold {{ $m === 'GET' ? 'text-emerald-600' : 'text-brand-600' }}">{{ $m }}</span></td>
@@ -115,7 +114,7 @@
 
             <h3 class="font-semibold text-slate-900 mt-8 mb-2">Submit an invoice</h3>
             <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
-<pre class="whitespace-pre"><span class="text-slate-400"># AI extracts, rules decide, ACH pays</span>
+<pre class="whitespace-pre"><span class="text-slate-400"># AI reads it; then pay it with PayPal from the dashboard</span>
 curl -X POST {{ $base }}/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
   -d vendor_name=<span class="text-amber-200">"Jane Q Notary"</span> \
@@ -123,9 +122,9 @@ curl -X POST {{ $base }}/api/v1/invoices \
   -d amount=<span class="text-amber-200">125.00</span> -d currency=<span class="text-amber-200">USD</span> \
   -d external_ref=<span class="text-amber-200">order:12345:notary-payment</span></pre>
             </div>
-            <p class="mt-3 text-sm text-slate-500">Response includes the invoice <code class="bg-slate-100 rounded px-1 py-0.5">status</code>
-                — <code class="bg-slate-100 rounded px-1 py-0.5">paid</code>/<code class="bg-slate-100 rounded px-1 py-0.5">paying</code> if it cleared the rules,
-                or <code class="bg-slate-100 rounded px-1 py-0.5">needs_review</code> with the reasons it was parked.</p>
+            <p class="mt-3 text-sm text-slate-500">The response includes the invoice <code class="bg-slate-100 rounded px-1 py-0.5">status</code>.
+                A new payable lands in <code class="bg-slate-100 rounded px-1 py-0.5">needs_review</code>, waiting in the queue to be paid with PayPal;
+                it becomes <code class="bg-slate-100 rounded px-1 py-0.5">paid</code> once a payment is captured.</p>
         </section>
 
         {{-- MCP --}}
@@ -133,8 +132,8 @@ curl -X POST {{ $base }}/api/v1/invoices \
             <h2 class="text-2xl font-bold text-slate-900">MCP server</h2>
             <p class="mt-3 text-slate-600 max-w-2xl">
                 HandlemyAP speaks the <strong>Model Context Protocol</strong> over streamable HTTP (JSON-RPC 2.0).
-                Connect an AI agent and it gets five tools, each gated by the same deterministic rules — so an agent
-                can propose and approve payments without ever being trusted with the money logic.
+                Connect an AI agent and it gets four tools to submit and track payables — so an agent can file a
+                bill into the queue, but a human still pays it with PayPal. The agent never moves the money.
             </p>
 
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Endpoint</h3>
@@ -159,11 +158,10 @@ curl -X POST {{ $base }}/api/v1/invoices \
             <h3 class="font-semibold text-slate-900 mt-6 mb-2">Tools</h3>
             <div class="grid sm:grid-cols-2 gap-3">
                 @foreach ([
-                    ['submit_invoice', 'Add a payable. AI/normalise → rules → auto-pay via ACH or park for review.'],
+                    ['submit_invoice', 'Add a payable. AI reads and normalises it, then it waits in the queue to be paid with PayPal.'],
                     ['list_invoices', 'See the queue, optionally filtered by status.'],
-                    ['get_invoice', 'Inspect one invoice and its payout history.'],
-                    ['approve_invoice', 'Release a parked invoice — the human-in-the-loop step.'],
-                    ['list_payouts', 'See ACH payouts and their settlement status.'],
+                    ['get_invoice', 'Inspect one invoice and its payment history.'],
+                    ['list_payouts', 'See PayPal payments and their status.'],
                 ] as [$t, $d])
                 <div class="rounded-2xl border border-slate-200 p-4">
                     <code class="text-brand-600 text-sm">{{ $t }}</code>
@@ -197,13 +195,14 @@ curl -X POST {{ $base }}/api/v1/invoices \
             <h2 class="text-2xl font-bold text-slate-900">Invoice lifecycle</h2>
             <p class="mt-3 text-slate-600 max-w-2xl">Every invoice moves through the same states, whichever surface created it:</p>
             <div class="flex flex-wrap gap-2 mt-4 text-xs font-mono">
-                @foreach (['received', 'extracting', 'needs_review', 'approved / scheduled', 'paying', 'paid', 'held', 'rejected', 'failed'] as $s)
+                @foreach (['received', 'extracting', 'needs_review', 'paid', 'held', 'rejected'] as $s)
                     <span class="bg-slate-100 text-slate-600 rounded-full px-3 py-1">{{ $s }}</span>
                 @endforeach
             </div>
             <p class="mt-4 text-sm text-slate-500 max-w-2xl">
-                AI only reads the document. The decision to pay is a deterministic rule engine — amount ceilings,
-                known-vendors-only, daily caps, duplicate holds — so money movement is always auditable.
+                AI only reads the document — genuinely semantic work. Every invoice then waits in
+                <code class="bg-slate-100 rounded px-1 py-0.5">needs_review</code> until a human pays it with PayPal
+                (<code class="bg-slate-100 rounded px-1 py-0.5">paid</code>), holds it, or rejects it. Money only moves on a real PayPal approval.
             </p>
         </section>
 

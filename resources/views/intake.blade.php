@@ -23,7 +23,7 @@
                     <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
                 </div>
                 <h1 class="text-xl font-bold text-slate-900 mt-4">Invoice sent to {{ session('sent') }}</h1>
-                <p class="text-slate-500 mt-2 text-sm">They’ll review it and pay you by bank transfer (ACH). You can close this page.</p>
+                <p class="text-slate-500 mt-2 text-sm">They’ll review it and pay you with PayPal. You can close this page.</p>
                 <a href="{{ url()->current() }}" class="inline-block mt-6 text-brand-600 text-sm font-medium hover:underline">Send another</a>
             </div>
         @else
@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold text-slate-900 leading-tight">Send {{ $owner->name }} an invoice</h1>
-                    <p class="text-slate-500 text-sm">They’ll review it and pay you by bank transfer (ACH).</p>
+                    <p class="text-slate-500 text-sm">They’ll review it and pay you with PayPal.</p>
                 </div>
             </div>
 
@@ -123,7 +123,7 @@
 
     <footer class="border-t border-slate-100 bg-white">
         <div class="max-w-xl mx-auto px-5 py-4 text-xs text-slate-400 text-center">
-            Powered by <a href="/" class="hover:text-slate-600">HandlemyAP</a> — AI accounts payable, paid by bank transfer (ACH).
+            Powered by <a href="/" class="hover:text-slate-600">HandlemyAP</a> — AI accounts payable, paid with PayPal.
         </div>
     </footer>
 </div>

@@ -539,9 +539,7 @@ async function waitForRead(id) {
 function decisionLine(inv) {
     const v = inv.vendor?.name || inv.vendor_name || 'Invoice';
     const map = {
-        scheduled:    `✓ ${v} auto-approved — scheduled for payment`,
         paid:         `✓ ${v} paid`,
-        paying:       `✓ ${v} — payment in progress`,
         needs_review: `Added — ${v} needs your review`,
     };
     return map[inv.status] || `Added — ${v} (${(inv.status || '').replace('_',' ')})`;
