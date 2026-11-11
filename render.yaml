@@ -1,11 +1,21 @@
 # Render blueprint for handlemyap. (The live demo is a Docker web service built
 # from the Dockerfile; this file documents/reproduces that setup.)
+
+# Dashboard data lives in a Render-managed PostgreSQL. Uploaded invoice files go
+# to S3 (see below), so the whole app is persistent across deploys/restarts.
+databases:
+  - name: handlemyap-db
+    plan: free
+    region: frankfurt
+    databaseName: handlemyap
+    user: handlemyap
+
 services:
   - type: web
     name: handlemyap
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     region: frankfurt
     autoDeploy: true
     envVars:
@@ -15,21 +25,15 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
-      # Dashboard data lives in a remote PostgreSQL (the shared fikets DB server).
+      # Render-managed PostgreSQL (connection string injected from the DB above).
       - key: DB_CONNECTION
         value: pgsql
-      - key: DB_HOST
-        value: 46.101.248.141
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_DATABASE
-        value: handlemyap
-      - key: DB_USERNAME
-        value: handlemyap
+      - key: DB_URL
+        fromDatabase:
+          name: handlemyap-db
+          property: connectionString
       - key: DB_SSLMODE
-        value: require
-      - key: DB_PASSWORD
-        sync: false
+        value: prefer
       # Uploaded invoice files live in S3 (the "handlemyap" bucket).
       - key: FILESYSTEM_DISK
         value: s3
