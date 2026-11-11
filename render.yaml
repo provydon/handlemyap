@@ -8,8 +8,8 @@ services:
     plan: starter
     region: frankfurt
     autoDeploy: true
-    # Persistent disk: the SQLite database and uploaded invoice files live here,
-    # so data survives deploys and restarts. (Requires a paid plan.)
+    # Persistent disk for the SQLite database (uploaded files go to S3, below),
+    # so dashboard data survives deploys and restarts. (Requires a paid plan.)
     disk:
       name: handlemyap-data
       mountPath: /data
@@ -21,11 +21,21 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
-      # Point the database and uploads at the persistent disk.
+      # SQLite database on the persistent disk.
       - key: DB_DATABASE
         value: /data/database.sqlite
-      - key: FILESYSTEM_LOCAL_ROOT
-        value: /data/storage/private
+      # Uploaded invoice files live in S3 (the "handlemyap" bucket).
+      - key: FILESYSTEM_DISK
+        value: s3
+      - key: AWS_DEFAULT_REGION
+        value: eu-central-1
+      - key: AWS_BUCKET
+        value: handlemyap
+      # Secrets — set in the Render dashboard / via API, never committed.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
       - key: HANDLEMYAP_GATEWAY
         value: auto
       - key: HANDLEMYAP_EXTRACTOR

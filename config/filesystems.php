@@ -32,9 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
-            // Uploaded invoices live here. In production this points at a
-            // persistent disk (see FILESYSTEM_LOCAL_ROOT) so files survive deploys.
-            'root' => env('FILESYSTEM_LOCAL_ROOT', storage_path('app/private')),
+            'root' => storage_path('app/private'),
             'serve' => true,
             'throw' => false,
             'report' => false,

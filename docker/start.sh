@@ -10,10 +10,8 @@ DB_DIR="$(dirname "$DB_PATH")"
 mkdir -p "$DB_DIR"
 [ -f "$DB_PATH" ] || touch "$DB_PATH"
 
-# Uploaded invoice files. On the persistent disk when FILESYSTEM_LOCAL_ROOT is set.
-if [ -n "$FILESYSTEM_LOCAL_ROOT" ]; then
-    mkdir -p "$FILESYSTEM_LOCAL_ROOT"
-fi
+# Uploaded invoice files are stored in S3 (FILESYSTEM_DISK=s3), so nothing to
+# create on disk for them.
 
 # Canonical URL for generated links / PayPal return URLs. Prefer an explicitly
 # configured APP_URL (e.g. the custom domain); fall back to the URL Render assigns.
