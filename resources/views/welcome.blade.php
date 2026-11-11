@@ -121,7 +121,7 @@
         </div>
         <div class="bg-brand-900 rounded-2xl p-5 text-sm text-slate-100 overflow-x-auto">
 <pre class="whitespace-pre"><span class="text-slate-400"># Submit a payable — AI reads it, it waits in the queue to be paid with PayPal</span>
-curl -X POST https://handlemyap.onrender.com/api/v1/invoices \
+curl -X POST https://handlemyap.com/api/v1/invoices \
   -H <span class="text-emerald-300">"Authorization: Bearer $TOKEN"</span> \
   -d vendor_name=<span class="text-amber-200">"Jane Q Notary"</span> \
   -d vendor_email=<span class="text-amber-200">jane@example.com</span> \

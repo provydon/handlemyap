@@ -2,6 +2,9 @@
 
 **Build What's Next with PayPal and AI**
 
+**Live demo:** https://handlemyap.com (sign in with `demo@handlemyap.test` / `password`)
+**Repo:** https://github.com/provydon/handlemyap
+
 ## One-liner
 
 An AI accounts-payable inbox: Claude reads any invoice you receive and turns it

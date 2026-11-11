@@ -2,6 +2,8 @@
 
 **AI reads your invoices. You pay them with PayPal in one tap.**
 
+🔗 **Live demo: https://handlemyap.com** — sign in with `demo@handlemyap.test` / `password`
+
 handlemyap is an accounts-payable inbox. Vendors send invoices to your link in
 any format — PDF, a photo, a screenshot, plain text. Claude reads each one,
 normalises it (vendor, amount, currency, due date, line items, and even the
