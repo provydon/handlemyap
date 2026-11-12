@@ -99,8 +99,11 @@ class PayPalCheckout
             return ['ok' => false, 'status' => null, 'capture_id' => null, 'message' => 'Could not authenticate with PayPal.'];
         }
 
+        // PayPal's capture endpoint takes no parameters, but it still rejects an
+        // empty body sent as application/json ("MALFORMED_REQUEST_JSON"). Send an
+        // explicit empty JSON object so the body is valid JSON.
         $response = Http::withToken($token)
-            ->withHeaders(['Content-Type' => 'application/json'])
+            ->withBody('{}', 'application/json')
             ->post($this->base().'/v2/checkout/orders/'.$orderId.'/capture');
 
         if ($response->failed()) {
