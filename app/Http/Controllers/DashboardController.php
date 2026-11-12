@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\Payout;
 use App\Services\Payables\PayablesOrchestrator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -58,7 +59,7 @@ class DashboardController extends Controller
      */
     public function queue(Request $request)
     {
-        $query = $request->user()->invoices()->with('vendor')->latest();
+        $query = $request->user()->invoices()->with(['vendor', 'payouts'])->latest();
 
         if ($status = $request->string('status')->toString()) {
             $query->where('status', $status);
@@ -72,8 +73,10 @@ class DashboardController extends Controller
         if ($term = trim($request->string('search')->toString())) {
             $like = '%'.$term.'%';
             $query->where(function ($w) use ($like) {
-                $w->where('vendor_name', 'like', $like)
+                $w->where('vendor_name', 'like', $like)       // client / vendor name
                     ->orWhere('invoice_number', 'like', $like)
+                    ->orWhere('po_ref', 'like', $like)
+                    ->orWhereRaw('CAST(amount AS TEXT) LIKE ?', [$like]) // match by amount
                     ->orWhereHas('vendor', fn ($v) => $v
                         ->where('name', 'like', $like)->orWhere('email', 'like', $like));
             });
@@ -91,6 +94,8 @@ class DashboardController extends Controller
     /** Shape an invoice row for the dashboard queue. @return array<string, mixed> */
     private function present(Invoice $i): array
     {
+        $payout = $i->status === Invoice::STATUS_PAID ? $this->paidPayout($i) : null;
+
         return [
             'id' => $i->id,
             'vendor' => $i->vendor?->name ?? $i->vendor_name,
@@ -104,7 +109,75 @@ class DashboardController extends Controller
             'reasons' => $i->review_reasons ? implode(' · ', $i->review_reasons) : null,
             'source' => $i->source,
             'file_url' => $i->file_path ? url("/app/invoices/{$i->id}/file") : null,
+            // Paid invoices link out to the PayPal transaction (the capture);
+            // demo-mode captures aren't real transactions, so they carry a flag
+            // instead of a link.
+            'payment_url' => $this->paymentUrl($payout),
+            'payment_ref' => $payout?->provider_item_ref ?: $payout?->provider_ref,
+            'payment_demo' => $payout?->provider_status === 'DEMO_CAPTURE',
         ];
+    }
+
+    /** The settled payout for a paid invoice (eager-loaded; no extra query). */
+    private function paidPayout(Invoice $i): ?Payout
+    {
+        $payouts = $i->relationLoaded('payouts') ? $i->payouts : $i->payouts()->get();
+
+        return $payouts->firstWhere('status', Payout::STATUS_PAID) ?? $payouts->last();
+    }
+
+    /**
+     * A link to the PayPal transaction for a settled payout. The capture id is
+     * PayPal's transaction id; the viewer (the AP operator who paid) sees it in
+     * their PayPal activity. Returns null when there's nothing real to link to
+     * (demo capture, non-PayPal rail, or no reference recorded).
+     */
+    private function paymentUrl(?Payout $payout): ?string
+    {
+        if (! $payout || $payout->rail !== 'paypal' || $payout->provider_status === 'DEMO_CAPTURE') {
+            return null;
+        }
+
+        $txn = $payout->provider_item_ref ?: $payout->provider_ref; // capture id, else order id
+        if (blank($txn)) {
+            return null;
+        }
+
+        $live = in_array(config('handlemyap.paypal.env'), ['production', 'prod', 'live'], true);
+        $host = $live ? 'https://www.paypal.com' : 'https://www.sandbox.paypal.com';
+
+        return "{$host}/activity/payment/{$txn}";
+    }
+
+    /** The single-invoice page — full detail, document, payment link, actions. */
+    public function show(Request $request, Invoice $invoice)
+    {
+        $this->authorizeOwner($request, $invoice);
+
+        $invoice->load(['vendor', 'payouts']);
+        $payout = $invoice->status === Invoice::STATUS_PAID ? $this->paidPayout($invoice) : null;
+
+        return view('invoice', [
+            'invoice' => $invoice,
+            'payout' => $payout,
+            'paymentUrl' => $this->paymentUrl($payout),
+            'fileUrl' => $invoice->file_path ? route('invoice.file', $invoice) : null,
+        ]);
+    }
+
+    /**
+     * Remove the recorded payment from an invoice: delete its payout(s) and send
+     * it back to "needs review" so it can be acted on again. This only clears the
+     * record in HandlemyAP — it does NOT refund the money through PayPal.
+     */
+    public function removePayment(Request $request, Invoice $invoice, PayablesOrchestrator $orchestrator)
+    {
+        $this->authorizeOwner($request, $invoice);
+        $orchestrator->removePayment($invoice);
+
+        return redirect()
+            ->route('invoice.show', $invoice)
+            ->with('status', 'Payment removed — the invoice is back in Needs review. (No PayPal refund was issued.)');
     }
 
     /** Add an invoice from the dashboard — a file upload or a quick manual entry. */

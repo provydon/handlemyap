@@ -36,9 +36,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/app/summary', [DashboardController::class, 'summary']);
     Route::get('/app/queue', [DashboardController::class, 'queue']);
     Route::post('/app/invoices', [DashboardController::class, 'store']);
+    Route::get('/app/invoices/{invoice}', [DashboardController::class, 'show'])->name('invoice.show');
     Route::get('/app/invoices/{invoice}/file', [DashboardController::class, 'file'])->name('invoice.file');
     Route::post('/app/invoices/{invoice}/hold', [DashboardController::class, 'hold']);
     Route::post('/app/invoices/{invoice}/reject', [DashboardController::class, 'reject']);
+    // Remove/void the recorded payment (does not refund via PayPal — see controller).
+    Route::delete('/app/invoices/{invoice}/payment', [DashboardController::class, 'removePayment'])->name('invoice.payment.remove');
 
     // Pay with PayPal (Checkout / Orders v2) — start → approve at PayPal → return/capture.
     Route::post('/app/invoices/{invoice}/pay/paypal', [InvoicePaymentController::class, 'start'])->name('invoice.pay.start');

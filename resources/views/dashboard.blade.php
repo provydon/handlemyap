@@ -329,8 +329,17 @@ const COLUMNS = [
     { headerName: 'Conf.', field: 'confidence', maxWidth: 80, valueFormatter: p => p.value == null ? '' : p.value + '%' },
     { headerName: 'Why / note', field: 'reasons', minWidth: 160, tooltipField: 'reasons' },
     { headerName: 'Doc', maxWidth: 70, cellRenderer: p => p.data.file_url ? `<a href="${p.data.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : '' },
+    { headerName: 'Payment', maxWidth: 110, cellRenderer: p => paymentCell(p.data) },
     { headerName: 'Action', width: 160, flex: 0, pinned: 'right', resizable: false, sortable: false, cellRenderer: p => actionMenu(p.data.id, p.data.status) },
 ];
+
+// Paid invoices link out to their PayPal transaction; demo-mode payments have
+// no real transaction, so they show a muted "demo" marker instead of a link.
+function paymentCell(d) {
+    if (d.payment_url) return `<a href="${d.payment_url}" target="_blank" rel="noopener" class="text-brand-600 hover:underline">PayPal&nbsp;↗</a>`;
+    if (d.status === 'paid') return `<span class="text-slate-400" title="Paid in demo mode — no live PayPal transaction">demo</span>`;
+    return '';
+}
 
 function filterParams() {
     const p = new URLSearchParams();
@@ -408,8 +417,22 @@ function initGrid() {
             rowData: [],
             defaultColDef: { resizable: true, sortable: true, flex: 1 },
             columnDefs: COLUMNS,
+            rowClass: 'cursor-pointer',
+            onRowClicked: onRowClicked,
         });
     }
+}
+
+// Clicking a row opens the invoice — but not when the click lands on an
+// interactive control in the row (the Actions menu, the Doc/Payment links).
+function onRowClicked(e) {
+    const t = e.event && e.event.target;
+    if (t && t.closest('a, button, select, input, label')) return;
+    if (e.data && e.data.id) window.location = `/app/invoices/${e.data.id}`;
+}
+function rowNav(ev, id) {
+    if (ev.target.closest('a, button, select, input, label')) return;
+    window.location = `/app/invoices/${id}`;
 }
 
 // Summary metrics — one grouped DB aggregate, independent of the queue page.
@@ -432,8 +455,8 @@ function renderFallback(rows) {
     el.innerHTML = `<table class="min-w-full text-sm">
         <thead><tr class="text-left text-slate-400 border-b">
             <th class="py-2 pr-3">Vendor</th><th class="pr-3">Amount</th><th class="pr-3">Due</th>
-            <th class="pr-3">Status</th><th class="pr-3">Source</th><th class="pr-3">Why / note</th><th class="pr-3">Doc</th><th>Action</th></tr></thead>
-        <tbody>${rows.map(r => `<tr class="border-b border-slate-100">
+            <th class="pr-3">Status</th><th class="pr-3">Source</th><th class="pr-3">Why / note</th><th class="pr-3">Doc</th><th class="pr-3">Payment</th><th>Action</th></tr></thead>
+        <tbody>${rows.map(r => `<tr class="border-b border-slate-100 cursor-pointer hover:bg-slate-50" onclick="rowNav(event, ${r.id})">
             <td class="py-2 pr-3">${r.vendor ?? ''}</td>
             <td class="pr-3">${money(r.amount, r.currency)}</td>
             <td class="pr-3">${r.due_date ?? ''}</td>
@@ -441,6 +464,7 @@ function renderFallback(rows) {
             <td class="pr-3 text-slate-500">${r.source ?? ''}</td>
             <td class="pr-3 text-slate-500">${r.reasons ?? ''}</td>
             <td class="pr-3">${r.file_url ? `<a href="${r.file_url}" target="_blank" class="text-brand-600 hover:underline">view</a>` : ''}</td>
+            <td class="pr-3">${paymentCell(r)}</td>
             <td>${actionMenu(r.id, r.status)}</td></tr>`).join('')}</tbody></table>`;
 }
 

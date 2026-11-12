@@ -134,6 +134,23 @@ class PayablesOrchestrator
         return $payout;
     }
 
+    /**
+     * Undo a recorded payment: drop the payout(s) and return the invoice to
+     * "needs review". Clears only our record — it does not refund via PayPal.
+     */
+    public function removePayment(Invoice $invoice): void
+    {
+        $invoice->payouts()->delete();
+
+        $invoice->update([
+            'status' => Invoice::STATUS_NEEDS_REVIEW,
+            'approved_at' => null,
+            'approved_by' => null,
+        ]);
+
+        Cache::forget("payout_balances:{$invoice->user_id}");
+    }
+
     public function hold(Invoice $invoice): void
     {
         $invoice->update(['status' => Invoice::STATUS_HELD]);
